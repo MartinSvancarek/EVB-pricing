@@ -6,6 +6,7 @@ const ranges = [
   { value: "week", label: "Week" },
   { value: "month", label: "30 dní" },
   { value: "mtd", label: "MTD" },
+  { value: "ytd", label: "YTD" },
 ];
 
 export function PeriodSelector({ defaultRange = "month" }: { defaultRange?: string }) {

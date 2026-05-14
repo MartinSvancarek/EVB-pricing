@@ -1,68 +1,81 @@
-import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { PageHeader, Section } from "@/components/ui";
-import { fmtCzk, fmtDateTime, fmtNumber } from "@/lib/format";
-import { DeleteScenarioButton } from "./DeleteScenarioButton";
+import { PageHeader } from "@/components/ui";
+import Link from "next/link";
+import { deleteScenario } from "../actions";
+import { fmtNumber, fmtCzk } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 export default async function ScenariosPage() {
   const scenarios = await prisma.simulationScenario.findMany({
     orderBy: { createdAt: "desc" },
-    include: { allocations: { include: { service: true } } },
+    include: { allocations: true },
   });
+
   return (
     <>
       <PageHeader
         title="Uložené scénáře"
-        subtitle="Snapshot scénářů simulace s parametry a alokací."
-        actions={<Link href="/simulation" className="btn-primary">Nový scénář</Link>}
+        subtitle="Dříve uložené what-if scénáře. Klikněte na řádek pro načtení do simulátoru."
+        actions={<Link href="/simulation" className="btn">Zpět na simulaci</Link>}
       />
-      <Section title={`Scénáře (${scenarios.length})`}>
+
+      <div className="card mb-4 p-3 text-sm text-muted">
+        <strong className="text-text">Tip:</strong> Kliknutím na název scénáře se otevře simulátor s předvyplněnými hodnotami daného scénáře. Tlačítkem Smazat ho trvale odstraníte.
+      </div>
+
+      {scenarios.length === 0 ? (
+        <p className="text-muted">Zatím nemáte žádné scénáře.</p>
+      ) : (
         <table className="table">
           <thead>
             <tr>
               <th>Název</th>
               <th>Popis</th>
-              <th className="text-right">Tokeny</th>
-              <th className="text-right">Obrat CZK</th>
-              <th className="text-right">FX</th>
-              <th>Alokace</th>
+              <th>Tokeny</th>
+              <th>Obrat CZK</th>
+              <th>FX</th>
+              <th>Služby</th>
               <th>Vytvořeno</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {scenarios.map((s) => (
-              <tr key={s.id}>
-                <td className="font-medium">{s.name}</td>
-                <td className="text-muted text-xs">{s.description}</td>
-                <td className="text-right font-mono">{fmtNumber(Number(s.totalTokensAssumption), { compact: true })}</td>
-                <td className="text-right font-mono">{fmtCzk(s.revenueCzkAssumption)}</td>
-                <td className="text-right font-mono">{s.fxRate.toFixed(3)}</td>
+            {scenarios.map((sc) => (
+              <tr key={sc.id} className="group">
                 <td>
-                  <div className="flex flex-wrap gap-1">
-                    {s.allocations.map((a) => (
-                      <span
-                        key={a.id}
-                        className="badge text-[10px]"
-                        style={{ borderColor: `${a.service.color}55`, color: a.service.color }}
-                      >
-                        {a.service.name} {a.sharePercent.toFixed(0)}%
-                      </span>
-                    ))}
-                  </div>
+                  <Link
+                    href={`/simulation?scenario=${sc.id}`}
+                    className="text-primary hover:underline font-medium"
+                    title="Načíst scénář do simulátoru"
+                  >
+                    {sc.name}
+                  </Link>
                 </td>
-                <td className="text-xs text-muted">{fmtDateTime(s.createdAt)}</td>
-                <td><DeleteScenarioButton id={s.id} /></td>
+                <td className="text-muted text-sm">{sc.description || "—"}</td>
+                <td className="font-mono">{fmtNumber(Number(sc.totalTokensAssumption))}</td>
+                <td className="font-mono">{fmtCzk(sc.revenueCzkAssumption)}</td>
+                <td className="font-mono">{sc.fxRate}</td>
+                <td className="text-xs text-muted">
+                  {sc.allocations.map((a) => `${Math.round(a.sharePercent)}%`).join(" / ")}
+                </td>
+                <td className="text-muted text-sm">{sc.createdAt.toLocaleDateString("cs")}</td>
+                <td>
+                  <form action={deleteScenario}>
+                    <input type="hidden" name="id" value={sc.id} />
+                    <button
+                      className="text-xs text-bad hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Smazat scénář"
+                    >
+                      Smazat
+                    </button>
+                  </form>
+                </td>
               </tr>
             ))}
-            {scenarios.length === 0 && (
-              <tr><td colSpan={8} className="text-center text-muted py-6">Žádné scénáře.</td></tr>
-            )}
           </tbody>
         </table>
-      </Section>
+      )}
     </>
   );
 }

@@ -43,6 +43,10 @@ export default async function UsageView({
   return (
     <>
       <PageHeader title="Cost analytics – Usage" subtitle="Token a usage objem napříč službami, funkcemi a modely." />
+
+      <div className="card mb-4 p-3 text-sm text-muted">
+        <strong className="text-text">Co je tato stránka?</strong> Analýza objemu spotřeby tokenů a dalších jednotek (obrázky, sekundy videa/audia). Slouží k identifikaci nejnákladnějších služeb a modelů z hlediska spotřeby, nezávisle na ceně.
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <Kpi label="Tokeny celkem" value={fmtNumber(totalTokens, { compact: true })} sub="vstup + výstup" />
         <Kpi label="Ostatní jednotky" value={fmtNumber(totalUnits, { compact: true })} sub="image / s / req / min" />

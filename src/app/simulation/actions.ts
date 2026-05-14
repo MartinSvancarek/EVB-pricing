@@ -33,7 +33,9 @@ export async function saveScenario(input: {
   return scenario.id;
 }
 
-export async function deleteScenario(id: string) {
+export async function deleteScenario(formData: FormData) {
+  const id = formData.get("id") as string;
+  if (!id) throw new Error("Missing scenario id");
   await prisma.simulationScenario.delete({ where: { id } });
   revalidatePath("/simulation/scenarios");
 }

@@ -139,17 +139,6 @@ export default async function DashboardPage() {
         </table>
       </Section>
 
-      <div className="flex gap-2">
-        <Link href="/cost-analytics/cost" className="btn-primary">
-          Otevřít cost analytics
-        </Link>
-        <Link href="/simulation" className="btn">
-          Spustit simulaci
-        </Link>
-        <Link href="/pricing" className="btn">
-          Editovat pricing
-        </Link>
-      </div>
     </>
   );
 }

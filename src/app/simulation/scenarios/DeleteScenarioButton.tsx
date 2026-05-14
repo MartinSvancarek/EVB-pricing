@@ -11,7 +11,9 @@ export function DeleteScenarioButton({ id }: { id: string }) {
       onClick={() => {
         if (!confirm("Smazat scénář?")) return;
         start(async () => {
-          await deleteScenario(id);
+          const fd = new FormData();
+          fd.set("id", id);
+          await deleteScenario(fd);
         });
       }}
     >

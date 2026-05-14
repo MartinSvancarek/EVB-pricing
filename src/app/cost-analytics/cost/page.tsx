@@ -58,6 +58,10 @@ export default async function CostView({
     <>
       <PageHeader title="Cost analytics – CZK / USD" subtitle="Reálné peněžní náklady za zvolené období." />
 
+      <div className="card mb-4 p-3 text-sm text-muted">
+        <strong className="text-text">Co je tato stránka?</strong> Přehled skutečných peněžních nákladů na AI providery (OpenAI, Anthropic, …) v CZK a USD. Cost ratio = podíl nákladů na obratu – cíl je ≤ 20 %. Vyberte období v pravém horním rohu.
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <Kpi label="Náklady CZK" value={fmtCzk(totalCzk)} sub={fmtUsd(totalUsd, { compact: true })} />
         <Kpi

@@ -3,7 +3,6 @@ import Link from "next/link";
 const tabs = [
   { href: "/settings/fx", label: "FX" },
   { href: "/settings/revenue", label: "Revenue" },
-  { href: "/settings/data-sources", label: "Data sources" },
   { href: "/settings/users", label: "Users" },
 ];
 

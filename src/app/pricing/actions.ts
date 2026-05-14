@@ -8,8 +8,10 @@ const PricingSchema = z.object({
   id: z.string().optional(),
   functionId: z.string().min(1),
   provider: z.string().min(1),
+  fallbackProvider: z.string().nullable().optional(),
   model: z.string().min(1),
   billingType: z.enum(["token_io", "token_unit", "image", "audio_second", "video_second", "request", "minute"]),
+  priceUsd: z.coerce.number().nullable().optional(),
   inputPriceUsd: z.coerce.number().nullable().optional(),
   outputPriceUsd: z.coerce.number().nullable().optional(),
   unitPriceUsd: z.coerce.number().nullable().optional(),
@@ -33,8 +35,10 @@ export async function savePricing(formData: FormData) {
   const data = clean({
     functionId: parsed.functionId,
     provider: parsed.provider,
+    fallbackProvider: parsed.fallbackProvider ?? null,
     model: parsed.model,
     billingType: parsed.billingType,
+    priceUsd: parsed.priceUsd ?? null,
     inputPriceUsd: parsed.inputPriceUsd ?? null,
     outputPriceUsd: parsed.outputPriceUsd ?? null,
     unitPriceUsd: parsed.unitPriceUsd ?? null,
@@ -73,7 +77,7 @@ export async function savePricing(formData: FormData) {
   redirect("/pricing");
 }
 
-export async function inlineUpdatePricing(id: string, patch: Partial<{ inputPriceUsd: number | null; outputPriceUsd: number | null; unitPriceUsd: number | null; markupCoefficient: number; status: "active" | "inactive" }>) {
+export async function inlineUpdatePricing(id: string, patch: Partial<{ priceUsd: number | null; inputPriceUsd: number | null; outputPriceUsd: number | null; unitPriceUsd: number | null; markupCoefficient: number; status: "active" | "inactive" }>) {
   const before = await prisma.modelPricing.findUnique({ where: { id } });
   const after = await prisma.modelPricing.update({ where: { id }, data: { ...patch, updatedBy: "martin@everbot.cz" } });
   await prisma.auditLog.create({

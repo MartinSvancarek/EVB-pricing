@@ -21,37 +21,32 @@ export function PricingForm({
     <>
       <PageHeader
         title={initial ? "Editace ceny" : "Nová cena"}
-        subtitle="Definujte pricing pro konkrétní funkci × model × provider."
+        subtitle="Definujte pricing pro model × provider."
         actions={<Link href="/pricing" className="btn">Zpět</Link>}
       />
       <form action={savePricing} className="card max-w-3xl space-y-4">
         {initial && <input type="hidden" name="id" defaultValue={initial.id} />}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="label">Funkce</label>
-            <select name="functionId" required defaultValue={initial?.functionId ?? ""} className="input w-full">
-              <option value="" disabled>— vyberte —</option>
-              {functions.map((f: any) => (
-                <option key={f.id} value={f.id}>
-                  {f.service.name} · {f.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label">Status</label>
-            <select name="status" defaultValue={initial?.status ?? "active"} className="input w-full">
-              <option value="active">active</option>
-              <option value="inactive">inactive</option>
-            </select>
+            <label className="label">Model</label>
+            <input name="model" required defaultValue={initial?.model ?? ""} className="input w-full" />
           </div>
           <div>
             <label className="label">Provider</label>
             <input name="provider" required defaultValue={initial?.provider ?? ""} className="input w-full" />
           </div>
           <div>
-            <label className="label">Model</label>
-            <input name="model" required defaultValue={initial?.model ?? ""} className="input w-full" />
+            <label className="label">Fallback provider</label>
+            <input name="fallbackProvider" defaultValue={initial?.fallbackProvider ?? ""} className="input w-full" placeholder="nepovinné" />
+          </div>
+          <div>
+            <label className="label">Služba (funkce)</label>
+            <select name="functionId" required defaultValue={initial?.functionId ?? ""} className="input w-full">
+              <option value="" disabled>— vyberte —</option>
+              {functions.map((f: any) => (
+                <option key={f.id} value={f.id}>{f.service.name} · {f.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="label">Typ účtování</label>
@@ -66,30 +61,34 @@ export function PricingForm({
             </select>
           </div>
           <div>
-            <label className="label">Jednotka (label)</label>
-            <input name="unitLabel" defaultValue={initial?.unitLabel ?? ""} className="input w-full" placeholder="např. 1M tokens" />
+            <label className="label">Status</label>
+            <select name="status" defaultValue={initial?.status ?? "active"} className="input w-full">
+              <option value="active">active</option>
+              <option value="inactive">inactive</option>
+            </select>
           </div>
           <div>
-            <label className="label">Vstupní cena USD</label>
+            <label className="label">Cena USD (hlavní)</label>
+            <input type="number" step="0.000001" name="priceUsd" defaultValue={initial?.priceUsd ?? ""} className="input w-full" placeholder="per image / second / request" />
+          </div>
+          <div>
+            <label className="label">Vstupní cena USD (1M tokenů)</label>
             <input type="number" step="0.000001" name="inputPriceUsd" defaultValue={initial?.inputPriceUsd ?? ""} className="input w-full" />
           </div>
           <div>
-            <label className="label">Výstupní cena USD</label>
+            <label className="label">Výstupní cena USD (1M tokenů)</label>
             <input type="number" step="0.000001" name="outputPriceUsd" defaultValue={initial?.outputPriceUsd ?? ""} className="input w-full" />
           </div>
           <div>
-            <label className="label">Jednotková cena USD</label>
-            <input type="number" step="0.000001" name="unitPriceUsd" defaultValue={initial?.unitPriceUsd ?? ""} className="input w-full" />
-          </div>
-          <div>
-            <label className="label">Markup koeficient</label>
-            <input type="number" step="0.01" name="markupCoefficient" defaultValue={initial?.markupCoefficient ?? 1} className="input w-full" />
+            <label className="label">Jednotka (label)</label>
+            <input name="unitLabel" defaultValue={initial?.unitLabel ?? ""} className="input w-full" placeholder="např. 1M tokens, 1 image" />
           </div>
         </div>
         <div>
           <label className="label">Interní poznámka</label>
           <textarea name="internalNote" defaultValue={initial?.internalNote ?? ""} className="input w-full min-h-20" />
         </div>
+        <input type="hidden" name="markupCoefficient" value={initial?.markupCoefficient ?? "1"} />
         <div className="flex gap-2">
           <button className="btn-primary">Uložit</button>
           <Link href="/pricing" className="btn">Zrušit</Link>

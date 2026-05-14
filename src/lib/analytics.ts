@@ -11,6 +11,14 @@ export function periodMTD(): Period {
   return { from, to };
 }
 
+export function periodYTD(): Period {
+  const now = new Date();
+  const from = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+  const to = new Date();
+  to.setUTCHours(23, 59, 59, 999);
+  return { from, to };
+}
+
 export function periodLastNDays(n: number): Period {
   const to = new Date();
   to.setUTCHours(23, 59, 59, 999);
@@ -35,6 +43,8 @@ export function parsePeriod(searchParams: { from?: string; to?: string; range?: 
       return periodLastNDays(7);
     case "mtd":
       return periodMTD();
+    case "ytd":
+      return periodYTD();
     case "month":
     default:
       return periodLastNDays(30);

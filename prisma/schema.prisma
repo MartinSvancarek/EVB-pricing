@@ -45,9 +45,11 @@ model ModelPricing {
   functionId        String
   function          Function  @relation(fields: [functionId], references: [id])
   provider          String
+  fallbackProvider  String?
   model             String
   // token_io | token_unit | image | audio_second | video_second | request | minute
   billingType       String
+  priceUsd          Float?
   inputPriceUsd     Float?
   outputPriceUsd    Float?
   unitPriceUsd      Float?
@@ -145,4 +147,21 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+model Package {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  monthlyPriceCzk Float?
+  yearlyPriceCzk  Float?
+  monthlyInYearly Float?
+  twoYearPriceCzk Float?
+  threeYearPriceCzk Float?
+  credits         Float
+  creditsNote     String?
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

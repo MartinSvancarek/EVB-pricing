@@ -6,7 +6,12 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
-export default async function SimulationPage() {
+export default async function SimulationPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ scenario?: string }>;
+}) {
+  const sp = await searchParams;
   const period = periodLastNDays(30);
   const [data, fx, revenue, services] = await Promise.all([
     loadCosts(period),
@@ -25,15 +30,15 @@ export default async function SimulationPage() {
     0,
   );
 
-  // Per service: actual cost, tokens, cost_per_token
+  // Per service baseline
   const baseline = services.map((svc) => {
     const b = buckets.find((x) => x.serviceId === svc.id);
     const tokens = b ? b.inputTokens + b.outputTokens : 0;
     const units = b ? b.units : 0;
     const usage = tokens + units;
     const costCzk = b ? b.costCzk : 0;
-    const sharePct = totalCzk > 0 ? (costCzk / totalCzk) * 100 : 0;
-    const costPerToken = usage > 0 ? costCzk / usage : 0;
+    const sharePct = totalCzk > 0 ? Math.round((costCzk / totalCzk) * 100) : 0;
+    const costPerUnit = usage > 0 ? costCzk / usage : 0;
     return {
       serviceId: svc.id,
       serviceCode: svc.code,
@@ -42,18 +47,42 @@ export default async function SimulationPage() {
       actualCostCzk: costCzk,
       actualUsage: usage,
       actualSharePercent: sharePct,
-      costPerUnit: costPerToken,
+      costPerUnit,
       hasData: usage > 0,
     };
   });
+
+  // If loading a saved scenario, pass its allocations
+  let loadedScenario: { name: string; description: string | null; totalTokens: number; revenue: number; fx: number; shares: Record<string, number> } | null = null;
+  if (sp.scenario) {
+    const sc = await prisma.simulationScenario.findUnique({
+      where: { id: sp.scenario },
+      include: { allocations: true },
+    });
+    if (sc) {
+      loadedScenario = {
+        name: sc.name,
+        description: sc.description,
+        totalTokens: Number(sc.totalTokensAssumption),
+        revenue: sc.revenueCzkAssumption,
+        fx: sc.fxRate,
+        shares: Object.fromEntries(sc.allocations.map((a) => [a.serviceId, Math.round(a.sharePercent)])),
+      };
+    }
+  }
 
   return (
     <>
       <PageHeader
         title="Simulation"
-        subtitle="What-if interní rozdělení nákladů na tokeny mezi služby. Nejde o veřejné ceny."
+        subtitle="What-if simulace interního rozdělení nákladů na tokeny mezi služby."
         actions={<Link href="/simulation/scenarios" className="btn">Uložené scénáře</Link>}
       />
+
+      <div className="card mb-4 p-3 text-sm text-muted">
+        <strong className="text-text">Co je tato stránka?</strong> Simulujte dopad změny interního procentuálního rozdělení nákladů na tokeny mezi služby. Vlevo měníte simulované %, vpravo vidíte live přepočet výsledného cost ratio a nákladů. Nejde o veřejné ceny – jde o interní cost alokaci.
+      </div>
+
       <SimulationClient
         baseline={baseline}
         defaults={{
@@ -61,6 +90,7 @@ export default async function SimulationPage() {
           revenueCzkAssumption: Math.round(revenue || 4_500_000),
           fx: fx ?? 23,
         }}
+        loadedScenario={loadedScenario}
       />
     </>
   );

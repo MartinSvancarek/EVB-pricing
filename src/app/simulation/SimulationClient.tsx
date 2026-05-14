@@ -19,28 +19,38 @@ export type BaselineRow = {
   hasData: boolean;
 };
 
+type LoadedScenario = {
+  name: string;
+  description: string | null;
+  totalTokens: number;
+  revenue: number;
+  fx: number;
+  shares: Record<string, number>;
+} | null;
+
 export function SimulationClient({
   baseline,
   defaults,
+  loadedScenario,
 }: {
   baseline: BaselineRow[];
   defaults: { totalTokensAssumption: number; revenueCzkAssumption: number; fx: number };
+  loadedScenario: LoadedScenario;
 }) {
   const router = useRouter();
-  const [totalTokens, setTotalTokens] = useState(defaults.totalTokensAssumption);
-  const [revenue, setRevenue] = useState(defaults.revenueCzkAssumption);
-  const [fx, setFx] = useState(defaults.fx);
+  const [totalTokens, setTotalTokens] = useState(loadedScenario?.totalTokens ?? defaults.totalTokensAssumption);
+  const [revenue, setRevenue] = useState(loadedScenario?.revenue ?? defaults.revenueCzkAssumption);
+  const [fx, setFx] = useState(loadedScenario?.fx ?? defaults.fx);
   const [shares, setShares] = useState<Record<string, number>>(
-    Object.fromEntries(baseline.map((b) => [b.serviceId, +b.actualSharePercent.toFixed(2)])),
+    loadedScenario?.shares ?? Object.fromEntries(baseline.map((b) => [b.serviceId, b.actualSharePercent])),
   );
   const [manualCpt, setManualCpt] = useState<Record<string, number>>({});
-  const [name, setName] = useState("");
-  const [desc, setDesc] = useState("");
+  const [name, setName] = useState(loadedScenario?.name ?? "");
+  const [desc, setDesc] = useState(loadedScenario?.description ?? "");
   const [isPending, start] = useTransition();
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
 
   const sumShare = Object.values(shares).reduce((s, v) => s + (Number(v) || 0), 0);
-
   const actualTotalCzk = baseline.reduce((s, b) => s + b.actualCostCzk, 0);
 
   const sim = useMemo(() => {
@@ -49,14 +59,7 @@ export function SimulationClient({
       const simUsage = totalTokens * (share / 100);
       const cpt = b.hasData ? b.costPerUnit : Number(manualCpt[b.serviceId] ?? 0);
       const simCost = simUsage * cpt;
-      return {
-        ...b,
-        share,
-        simUsage,
-        simCost,
-        delta: simCost - b.actualCostCzk,
-        cpt,
-      };
+      return { ...b, share, simUsage, simCost, delta: simCost - b.actualCostCzk, cpt };
     });
   }, [baseline, shares, totalTokens, manualCpt]);
 
@@ -72,19 +75,12 @@ export function SimulationClient({
   }));
 
   function handleSave() {
-    if (!name.trim()) {
-      setSavedMsg("Zadejte název scénáře.");
-      return;
-    }
-    if (Math.abs(sumShare - 100) > 0.01) {
-      setSavedMsg(`Suma % musí být 100. Aktuálně: ${sumShare.toFixed(2)}`);
-      return;
-    }
+    if (!name.trim()) { setSavedMsg("Zadejte název scénáře."); return; }
+    if (Math.abs(sumShare - 100) > 1) { setSavedMsg(`Suma % musí být 100. Aktuálně: ${sumShare}`); return; }
     start(async () => {
       try {
         await saveScenario({
-          name,
-          description: desc,
+          name, description: desc,
           totalTokensAssumption: totalTokens,
           revenueCzkAssumption: revenue,
           fxRate: fx,
@@ -92,62 +88,49 @@ export function SimulationClient({
         });
         setSavedMsg("Scénář uložen.");
         setTimeout(() => router.push("/simulation/scenarios"), 600);
-      } catch (e: any) {
-        setSavedMsg(e.message ?? "Chyba.");
-      }
+      } catch (e: any) { setSavedMsg(e.message ?? "Chyba."); }
     });
   }
 
   function reset() {
-    setShares(Object.fromEntries(baseline.map((b) => [b.serviceId, +b.actualSharePercent.toFixed(2)])));
+    setShares(Object.fromEntries(baseline.map((b) => [b.serviceId, b.actualSharePercent])));
     setTotalTokens(defaults.totalTokensAssumption);
     setRevenue(defaults.revenueCzkAssumption);
     setFx(defaults.fx);
+    setName("");
+    setDesc("");
   }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* LEFT: Inputs */}
       <div>
-        <Section title="Vstupy">
+        <Section title="Globální předpoklady">
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div>
-              <label className="label">Předpokládané tokeny (období)</label>
-              <input
-                type="number"
-                value={totalTokens}
-                onChange={(e) => setTotalTokens(Number(e.target.value))}
-                className="input w-full"
-              />
+              <label className="label" title="Celkový předpokládaný objem tokenů za období simulace">Tokeny (období)</label>
+              <input type="number" value={totalTokens} onChange={(e) => setTotalTokens(Number(e.target.value))} className="input w-full" />
             </div>
             <div>
-              <label className="label">Obrat CZK</label>
-              <input
-                type="number"
-                value={revenue}
-                onChange={(e) => setRevenue(Number(e.target.value))}
-                className="input w-full"
-              />
+              <label className="label" title="Celkový obrat v CZK za období – slouží jako jmenovatel cost ratio">Obrat CZK</label>
+              <input type="number" value={revenue} onChange={(e) => setRevenue(Number(e.target.value))} className="input w-full" />
             </div>
             <div>
-              <label className="label">FX (CZK/USD)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={fx}
-                onChange={(e) => setFx(Number(e.target.value))}
-                className="input w-full"
-              />
+              <label className="label" title="FX kurz pro přepočet – snapshot z Settings">FX (CZK/USD)</label>
+              <input type="number" step="0.01" value={fx} onChange={(e) => setFx(Number(e.target.value))} className="input w-full" />
             </div>
           </div>
+        </Section>
 
+        <Section title="Alokace nákladů po službách" actions={<span className="text-xs text-muted">Celé čísla 0–100</span>}>
           <table className="table">
             <thead>
               <tr>
-                <th>Služba</th>
-                <th className="text-right">Aktuální %</th>
-                <th className="text-right">Simulované %</th>
-                <th className="text-right">Δ pp</th>
-                <th className="text-right">CZK / jednotka</th>
+                <th title="Interní služba (chat, video, grafika, …)">Služba</th>
+                <th title="Aktuální % podíl na celkových nákladech (z reálných dat za 30 dní)">Aktuální %</th>
+                <th title="Vaše simulované %. Suma musí být 100.">Simulované %</th>
+                <th title="Rozdíl: simulované − aktuální (v procentních bodech)">Δ pp</th>
+                <th title="Průměrný náklad CZK na 1 token/jednotku. U služeb bez trackingu zadejte ručně.">CZK/jednotka</th>
               </tr>
             </thead>
             <tbody>
@@ -161,31 +144,29 @@ export function SimulationClient({
                         {b.serviceName}
                       </span>
                     </td>
-                    <td className="text-right text-muted font-mono">{b.actualSharePercent.toFixed(2)} %</td>
-                    <td className="text-right">
+                    <td className="font-mono">{b.actualSharePercent} %</td>
+                    <td>
                       <input
                         type="number"
-                        step="0.5"
+                        min={0} max={100} step={1}
                         value={v}
-                        onChange={(e) => setShares({ ...shares, [b.serviceId]: Number(e.target.value) })}
-                        className="input w-20 text-right font-mono"
+                        onChange={(e) => setShares({ ...shares, [b.serviceId]: Math.round(Number(e.target.value)) })}
+                        className="input w-16 font-mono"
                       />
                     </td>
-                    <td className={`text-right font-mono ${delta > 0 ? "text-warn" : delta < 0 ? "text-good" : "text-muted"}`}>
-                      {delta >= 0 ? "+" : ""}{delta.toFixed(2)}
+                    <td className={`font-mono ${delta > 0 ? "text-warn" : delta < 0 ? "text-good" : "text-muted"}`}>
+                      {delta >= 0 ? "+" : ""}{delta}
                     </td>
-                    <td className="text-right">
+                    <td>
                       {b.hasData ? (
                         <span className="font-mono text-muted">{b.costPerUnit.toFixed(6)}</span>
                       ) : (
                         <input
-                          type="number"
-                          step="0.0001"
-                          placeholder="zadejte"
+                          type="number" step="0.0001" placeholder="zadejte"
                           value={manualCpt[b.serviceId] ?? ""}
                           onChange={(e) => setManualCpt({ ...manualCpt, [b.serviceId]: Number(e.target.value) })}
-                          className="input w-24 text-right font-mono"
-                          title="Služba nemá tracking. Zadejte odhad CZK/jednotka."
+                          className="input w-24 font-mono"
+                          title="Služba nemá tracking – zadejte odhad CZK/jednotka"
                         />
                       )}
                     </td>
@@ -194,9 +175,9 @@ export function SimulationClient({
               })}
               <tr className="font-semibold">
                 <td>Suma</td>
-                <td className="text-right text-muted">100.00 %</td>
-                <td className={`text-right font-mono ${Math.abs(sumShare - 100) > 0.01 ? "text-bad" : "text-good"}`}>
-                  {sumShare.toFixed(2)} %
+                <td>100 %</td>
+                <td className={`font-mono ${Math.abs(sumShare - 100) > 1 ? "text-bad" : "text-good"}`}>
+                  {sumShare} %
                 </td>
                 <td colSpan={2}></td>
               </tr>
@@ -204,7 +185,7 @@ export function SimulationClient({
           </table>
         </Section>
 
-        <Section title="Uložit jako scénář">
+        <Section title="Uložit scénář">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Název</label>
@@ -216,26 +197,21 @@ export function SimulationClient({
             </div>
           </div>
           <div className="flex gap-2 mt-3 items-center">
-            <button onClick={handleSave} disabled={isPending} className="btn-primary">
-              {isPending ? "Ukládám…" : "Uložit scénář"}
-            </button>
+            <button onClick={handleSave} disabled={isPending} className="btn-primary">{isPending ? "Ukládám…" : "Uložit scénář"}</button>
             <button onClick={reset} className="btn">Reset</button>
             {savedMsg && <span className="text-xs text-muted">{savedMsg}</span>}
           </div>
         </Section>
       </div>
 
+      {/* RIGHT: Results */}
       <div>
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <Kpi
-            label="Cost ratio – aktuální"
-            value={actualRatio != null ? fmtPct(actualRatio) : "—"}
-            status={ratioStatus(actualRatio)}
-          />
+          <Kpi label="Cost ratio – aktuální" value={actualRatio != null ? fmtPct(actualRatio) : "—"} status={ratioStatus(actualRatio)} />
           <Kpi
             label="Cost ratio – simulované"
             value={simRatio != null ? fmtPct(simRatio) : "—"}
-            sub={deltaPp != null ? `Δ ${deltaPp >= 0 ? "+" : ""}${deltaPp.toFixed(2)} pp` : undefined}
+            sub={deltaPp != null ? `Δ ${deltaPp >= 0 ? "+" : ""}${deltaPp.toFixed(1)} pp` : undefined}
             status={ratioStatus(simRatio)}
           />
           <Kpi label="Náklady aktuální" value={fmtCzk(actualTotalCzk)} />
@@ -247,7 +223,7 @@ export function SimulationClient({
           />
         </div>
 
-        <Section title="Náklady CZK – aktuální vs. simulované">
+        <Section title="Porovnání: aktuální vs. simulované (CZK)">
           <CompareBarChart data={chartData} />
         </Section>
 
@@ -255,11 +231,11 @@ export function SimulationClient({
           <table className="table">
             <thead>
               <tr>
-                <th>Služba</th>
-                <th className="text-right">Aktuální CZK</th>
-                <th className="text-right">Simulované CZK</th>
-                <th className="text-right">Δ CZK</th>
-                <th className="text-right">Δ %</th>
+                <th title="Služba">Služba</th>
+                <th title="Aktuální náklady za období v CZK">Aktuální CZK</th>
+                <th title="Simulované náklady po změně alokace">Simulované CZK</th>
+                <th title="Absolutní rozdíl v CZK">Δ CZK</th>
+                <th title="Relativní změna v %">Δ %</th>
               </tr>
             </thead>
             <tbody>
@@ -270,12 +246,12 @@ export function SimulationClient({
                       {r.serviceName}
                     </span>
                   </td>
-                  <td className="text-right font-mono">{fmtCzk(r.actualCostCzk)}</td>
-                  <td className="text-right font-mono">{fmtCzk(r.simCost)}</td>
-                  <td className={`text-right font-mono ${r.delta > 0 ? "text-bad" : r.delta < 0 ? "text-good" : "text-muted"}`}>
+                  <td className="font-mono">{fmtCzk(r.actualCostCzk)}</td>
+                  <td className="font-mono">{fmtCzk(r.simCost)}</td>
+                  <td className={`font-mono ${r.delta > 0 ? "text-bad" : r.delta < 0 ? "text-good" : "text-muted"}`}>
                     {r.delta >= 0 ? "+" : ""}{fmtCzk(r.delta)}
                   </td>
-                  <td className={`text-right font-mono ${r.delta > 0 ? "text-bad" : r.delta < 0 ? "text-good" : "text-muted"}`}>
+                  <td className={`font-mono ${r.delta > 0 ? "text-bad" : r.delta < 0 ? "text-good" : "text-muted"}`}>
                     {r.actualCostCzk > 0 ? fmtPct((r.simCost - r.actualCostCzk) / r.actualCostCzk, 1) : "—"}
                   </td>
                 </tr>
