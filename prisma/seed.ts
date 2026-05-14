@@ -31,8 +31,8 @@ async function main() {
     ],
   });
 
-  // FX rates – last 90 days
-  for (let i = 0; i < 90; i++) {
+  // FX rates – last 3 days
+  for (let i = 0; i < 3; i++) {
     await prisma.fxRate.create({
       data: { date: daysAgo(i), czkPerUsd: 22.8 + Math.sin(i / 7) * 0.4, source: "manual" },
     });

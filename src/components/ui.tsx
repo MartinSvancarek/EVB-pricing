@@ -5,14 +5,16 @@ export function Kpi({
   value,
   sub,
   status,
+  tooltip,
 }: {
   label: string;
   value: React.ReactNode;
   sub?: React.ReactNode;
   status?: "good" | "warn" | "bad" | "unknown";
+  tooltip?: string;
 }) {
   return (
-    <div className="kpi">
+    <div className="kpi" title={tooltip}>
       <div className="kpi-label">{label}</div>
       <div
         className={clsx(

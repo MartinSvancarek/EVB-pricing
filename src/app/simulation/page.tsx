@@ -75,13 +75,9 @@ export default async function SimulationPage({
     <>
       <PageHeader
         title="Simulation"
-        subtitle="What-if simulace interního rozdělení nákladů na tokeny mezi služby."
+        subtitle="What-if simulace interního rozdělení nákladů na tokeny mezi služby. Vlevo měníte %, vpravo vidíte live přepočet cost ratio a nákladů. Jde o interní cost alokaci, ne veřejné ceny."
         actions={<Link href="/simulation/scenarios" className="btn">Uložené scénáře</Link>}
       />
-
-      <div className="card mb-4 p-3 text-sm text-muted">
-        <strong className="text-text">Co je tato stránka?</strong> Simulujte dopad změny interního procentuálního rozdělení nákladů na tokeny mezi služby. Vlevo měníte simulované %, vpravo vidíte live přepočet výsledného cost ratio a nákladů. Nejde o veřejné ceny – jde o interní cost alokaci.
-      </div>
 
       <SimulationClient
         baseline={baseline}

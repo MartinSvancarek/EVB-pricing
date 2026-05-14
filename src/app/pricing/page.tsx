@@ -18,7 +18,7 @@ export default async function PricingPage({
     prisma.service.findMany({ orderBy: { name: "asc" } }),
     prisma.modelPricing.findMany({
       include: { function: { include: { service: true } } },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { model: "asc" },
     }),
     currentFx(),
   ]);
@@ -33,19 +33,15 @@ export default async function PricingPage({
     <>
       <PageHeader
         title="Pricing"
-        subtitle="Centrální přehled cen všech AI modelů. Inline editace cen a statusu. Filtry fungují dynamicky (bez potvrzení)."
+        subtitle="Správa ceníku AI modelů a providerů. Každý řádek = model s cenou USD (příp. vstup/výstup). Ceny se přepočítávají na CZK dle FX. Inline editace, dynamické filtry."
       />
 
-      <div className="card mb-4 p-3 text-sm text-muted">
-        <strong className="text-text">Co je tato stránka?</strong> Správa cenníku AI modelů a providerů. Každý řádek = jeden model s jeho cenou (USD), případně vstup/výstup pro chat modely. Ceny se přepočítávají na CZK podle aktuálního FX kurzu. Filtrujte podle služby, providera nebo vyhledáváním.
-      </div>
-
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <Kpi label="Aktivní záznamy" value={activeCount} />
-        <Kpi label="Inactive" value={inactiveCount} />
-        <Kpi label="Upraveno (7 dní)" value={recentlyUpdated} />
+        <Kpi label="Aktivní záznamy" value={activeCount} tooltip="Počet modelů se statusem 'active' v cenníku." />
+        <Kpi label="Inactive" value={inactiveCount} tooltip="Počet deaktivovaných modelů (historické nebo nahrazené)." />
+        <Kpi label="Upraveno (7 dní)" value={recentlyUpdated} tooltip="Počet záznamů upravených v posledních 7 dnech." />
         <Link href="/settings/fx">
-          <Kpi label="FX kurz" value={fx ? `${fx.toFixed(3)}` : "—"} sub="CZK / USD" />
+          <Kpi label="FX kurz" value={fx ? `${fx.toFixed(3)}` : "—"} sub="CZK / USD" tooltip="Aktuální FX kurz pro přepočet USD → CZK. Klikněte pro úpravu." />
         </Link>
       </div>
 

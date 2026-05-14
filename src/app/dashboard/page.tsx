@@ -76,9 +76,10 @@ export default async function DashboardPage() {
           value={ratio != null ? fmtPct(ratio) : "N/A"}
           sub={ratio == null ? "Zadejte obrat v Settings → Revenue" : "cíl ≤ 20 %"}
           status={status}
+          tooltip="Poměr nákladů na AI providery vůči obratu za aktuální měsíc. Cíl je udržet pod 20 %."
         />
-        <Kpi label="Náklady MTD" value={fmtCzk(mtdCosts.czk)} sub={fmtUsd(mtdCosts.usd, { compact: true })} />
-        <Kpi label="Token usage MTD" value={fmtNumber(mtdCosts.tokens, { compact: true })} sub="vstup + výstup" />
+        <Kpi label="Náklady MTD" value={fmtCzk(mtdCosts.czk)} sub={fmtUsd(mtdCosts.usd, { compact: true })} tooltip="Celkové náklady na AI modely za aktuální měsíc v CZK (a USD)." />
+        <Kpi label="Token usage MTD" value={fmtNumber(mtdCosts.tokens, { compact: true })} sub="vstup + výstup" tooltip="Celkový počet zpracovaných tokenů (vstupní + výstupní) za aktuální měsíc." />
         <Kpi
           label="Top služba"
           value={topService?.serviceName ?? "—"}
@@ -87,6 +88,7 @@ export default async function DashboardPage() {
               ? `${fmtCzk(topService.costCzk, { compact: true })} · ${fmtPct(topService.costCzk / mtdCosts.czk, 0)}`
               : undefined
           }
+          tooltip="Služba s nejvyššími náklady za aktuální měsíc."
         />
       </div>
 
@@ -108,10 +110,9 @@ export default async function DashboardPage() {
           <thead>
             <tr>
               <th>Služba</th>
-              <th>Funkce</th>
-              <th className="text-right">Náklady CZK</th>
-              <th className="text-right">% z celku</th>
-              <th className="text-right">Tokeny</th>
+              <th>Náklady CZK</th>
+              <th>% z celku</th>
+              <th>Tokeny</th>
             </tr>
           </thead>
           <tbody>
@@ -122,21 +123,34 @@ export default async function DashboardPage() {
                     {b.serviceName}
                   </span>
                 </td>
-                <td>{b.functionName}</td>
-                <td className="text-right font-mono">{fmtCzk(b.costCzk)}</td>
-                <td className="text-right text-muted">{fmtPct(b.costCzk / Math.max(mtdCosts.czk, 1), 1)}</td>
-                <td className="text-right text-muted">{fmtNumber(b.inputTokens + b.outputTokens, { compact: true })}</td>
+                <td className="font-mono">{fmtCzk(b.costCzk)}</td>
+                <td className="text-muted">{fmtPct(b.costCzk / Math.max(mtdCosts.czk, 1), 1)}</td>
+                <td className="text-muted">{fmtNumber(b.inputTokens + b.outputTokens, { compact: true })}</td>
               </tr>
             ))}
             {fnBuckets.length === 0 && (
               <tr>
-                <td colSpan={5} className="text-center text-muted py-6">
+                <td colSpan={4} className="text-center text-muted py-6">
                   Žádná data za období. Zkontrolujte tracking nebo seedněte databázi.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </Section>
+
+      <Section title="Služby">
+        <div className="flex flex-wrap gap-2">
+          {services.map((svc) => {
+            const b = buckets.find((x) => x.serviceId === svc.id);
+            return (
+              <div key={svc.id} className="badge px-3 py-1.5" style={{ borderColor: `${svc.color}55`, color: svc.color }}>
+                <span className="font-medium">{svc.name}</span>
+                {b && <span className="ml-1 text-muted text-xs">{fmtCzk(b.costCzk, { compact: true })}</span>}
+              </div>
+            );
+          })}
+        </div>
       </Section>
 
     </>

@@ -30,7 +30,9 @@ function clean<T extends Record<string, any>>(o: T): T {
 }
 
 export async function savePricing(formData: FormData) {
+  const returnUrl = (formData.get("returnUrl") as string) || "/pricing";
   const raw = Object.fromEntries(formData);
+  delete (raw as any).returnUrl;
   const parsed = PricingSchema.parse(raw);
   const data = clean({
     functionId: parsed.functionId,
@@ -74,7 +76,7 @@ export async function savePricing(formData: FormData) {
     });
   }
   revalidatePath("/pricing");
-  redirect("/pricing");
+  redirect(returnUrl);
 }
 
 export async function inlineUpdatePricing(id: string, patch: Partial<{ priceUsd: number | null; inputPriceUsd: number | null; outputPriceUsd: number | null; unitPriceUsd: number | null; markupCoefficient: number; status: "active" | "inactive" }>) {

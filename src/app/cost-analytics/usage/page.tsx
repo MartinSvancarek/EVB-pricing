@@ -42,23 +42,22 @@ export default async function UsageView({
 
   return (
     <>
-      <PageHeader title="Cost analytics – Usage" subtitle="Token a usage objem napříč službami, funkcemi a modely." />
+      <PageHeader title="Cost analytics – Usage" subtitle="Analýza objemu spotřeby tokenů a dalších jednotek (obrázky, video, audio). Identifikuje nejnákladnější služby a modely z hlediska spotřeby, nezávisle na ceně." />
 
-      <div className="card mb-4 p-3 text-sm text-muted">
-        <strong className="text-text">Co je tato stránka?</strong> Analýza objemu spotřeby tokenů a dalších jednotek (obrázky, sekundy videa/audia). Slouží k identifikaci nejnákladnějších služeb a modelů z hlediska spotřeby, nezávisle na ceně.
-      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <Kpi label="Tokeny celkem" value={fmtNumber(totalTokens, { compact: true })} sub="vstup + výstup" />
-        <Kpi label="Ostatní jednotky" value={fmtNumber(totalUnits, { compact: true })} sub="image / s / req / min" />
+        <Kpi label="Tokeny celkem" value={fmtNumber(totalTokens, { compact: true })} sub="vstup + výstup" tooltip="Celkový počet zpracovaných tokenů (vstupní + výstupní) za období." />
+        <Kpi label="Ostatní jednotky" value={fmtNumber(totalUnits, { compact: true })} sub="image / s / req / min" tooltip="Počet ne-tokenových jednotek (obrázky, sekundy videa/audia, requesty)." />
         <Kpi
           label="Top služba (usage)"
           value={top?.serviceName ?? "—"}
           sub={top ? fmtNumber(top.inputTokens + top.outputTokens + top.units, { compact: true }) : undefined}
+          tooltip="Služba s nejvyšší spotřebou tokenů/jednotek za období."
         />
         <Kpi
           label="Funkcí bez trackingu"
           value={missingFns}
           status={missingFns > 0 ? "warn" : "good"}
+          tooltip="Počet aktivních funkcí, pro které ještě není napojený zdroj usage dat."
         />
       </div>
 
@@ -73,9 +72,9 @@ export default async function UsageView({
               <th>Provider</th>
               <th>Model</th>
               <th>Služba</th>
-              <th className="text-right">Vstup tokeny</th>
-              <th className="text-right">Výstup tokeny</th>
-              <th className="text-right">Jednotky</th>
+              <th>Vstup tokeny</th>
+              <th>Výstup tokeny</th>
+              <th>Jednotky</th>
             </tr>
           </thead>
           <tbody>
@@ -84,9 +83,9 @@ export default async function UsageView({
                 <td className="text-muted">{b.provider}</td>
                 <td className="font-mono text-xs">{b.model}</td>
                 <td>{b.serviceName}</td>
-                <td className="text-right">{fmtNumber(b.inputTokens, { compact: true })}</td>
-                <td className="text-right">{fmtNumber(b.outputTokens, { compact: true })}</td>
-                <td className="text-right">{fmtNumber(b.units, { compact: true })}</td>
+                <td>{fmtNumber(b.inputTokens, { compact: true })}</td>
+                <td>{fmtNumber(b.outputTokens, { compact: true })}</td>
+                <td>{fmtNumber(b.units, { compact: true })}</td>
               </tr>
             ))}
             {modelBuckets.length === 0 && <tr><td colSpan={6} className="text-center text-muted py-6">Žádná data.</td></tr>}

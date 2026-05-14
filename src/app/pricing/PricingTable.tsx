@@ -34,6 +34,17 @@ export function PricingTable({ pricings, services, providers, fx, initialFilters
   const [status, setStatus] = useState(initialFilters.status || "active");
   const [q, setQ] = useState(initialFilters.q);
 
+  // Build returnUrl with current filters so edit form can return to same view
+  const returnUrl = useMemo(() => {
+    const sp = new URLSearchParams();
+    if (service) sp.set("service", service);
+    if (provider) sp.set("provider", provider);
+    if (status && status !== "active") sp.set("status", status);
+    if (q) sp.set("q", q);
+    const qs = sp.toString();
+    return qs ? `/pricing?${qs}` : "/pricing";
+  }, [service, provider, status, q]);
+
   const filtered = useMemo(() => {
     return pricings.filter((p) => {
       if (service && p.serviceCode !== service) return false;
@@ -102,7 +113,7 @@ export function PricingTable({ pricings, services, providers, fx, initialFilters
           </thead>
           <tbody>
             {filtered.map((p) => (
-              <PricingRowItem key={p.id} row={p} fx={fx} />
+              <PricingRowItem key={p.id} row={p} fx={fx} returnUrl={returnUrl} />
             ))}
             {filtered.length === 0 && (
               <tr><td colSpan={11} className="text-center text-muted py-8">Žádné záznamy odpovídající filtru.</td></tr>
@@ -114,7 +125,7 @@ export function PricingTable({ pricings, services, providers, fx, initialFilters
   );
 }
 
-function PricingRowItem({ row: p, fx }: { row: PricingRow; fx: number }) {
+function PricingRowItem({ row: p, fx, returnUrl }: { row: PricingRow; fx: number; returnUrl: string }) {
   const baseUsd = p.billingType === "token_io" ? (p.inputPriceUsd ?? 0) : (p.priceUsd ?? p.inputPriceUsd ?? 0);
   const czk = baseUsd * fx;
   const sixtyDaysAgo = Date.now() - 60 * 86_400_000;
@@ -142,7 +153,7 @@ function PricingRowItem({ row: p, fx }: { row: PricingRow; fx: number }) {
       <td className="text-muted font-mono text-xs">{czk ? fmtCzk(czk) : "—"}</td>
       <td><StatusToggle id={p.id} status={p.status} /></td>
       <td className="text-xs text-muted">{fmtDate(p.updatedAt)}</td>
-      <td><Link href={`/pricing/${p.id}`} className="text-accent text-xs hover:underline">edit</Link></td>
+      <td><Link href={`/pricing/${p.id}?returnUrl=${encodeURIComponent(returnUrl)}`} className="text-accent text-xs hover:underline">edit</Link></td>
     </tr>
   );
 }

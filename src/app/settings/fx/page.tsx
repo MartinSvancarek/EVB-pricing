@@ -6,7 +6,7 @@ import { addFx } from "../actions";
 export const dynamic = "force-dynamic";
 
 export default async function FxPage() {
-  const rates = await prisma.fxRate.findMany({ orderBy: { date: "desc" }, take: 30 });
+  const rates = await prisma.fxRate.findMany({ orderBy: { date: "desc" }, take: 3 });
   return (
     <>
       <PageHeader title="Settings · FX kurz CZK/USD" subtitle="Manuální zadávání kurzu. Auto-fetch z ČNB ve v2." />
@@ -23,16 +23,16 @@ export default async function FxPage() {
           <button className="btn-primary">Uložit</button>
         </form>
       </Section>
-      <Section title="Historie (posledních 30)">
+      <Section title="Historie (poslední 3 záznamy)">
         <table className="table">
           <thead>
-            <tr><th>Datum</th><th className="text-right">CZK / USD</th><th>Zdroj</th></tr>
+            <tr><th>Datum</th><th>CZK / USD</th><th>Zdroj</th></tr>
           </thead>
           <tbody>
             {rates.map((r) => (
               <tr key={r.id}>
                 <td>{fmtDate(r.date)}</td>
-                <td className="text-right font-mono">{r.czkPerUsd.toFixed(4)}</td>
+                <td className="font-mono">{r.czkPerUsd.toFixed(4)}</td>
                 <td className="text-muted text-xs">{r.source}</td>
               </tr>
             ))}

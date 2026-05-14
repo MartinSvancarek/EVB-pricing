@@ -56,25 +56,23 @@ export default async function CostView({
 
   return (
     <>
-      <PageHeader title="Cost analytics – CZK / USD" subtitle="Reálné peněžní náklady za zvolené období." />
-
-      <div className="card mb-4 p-3 text-sm text-muted">
-        <strong className="text-text">Co je tato stránka?</strong> Přehled skutečných peněžních nákladů na AI providery (OpenAI, Anthropic, …) v CZK a USD. Cost ratio = podíl nákladů na obratu – cíl je ≤ 20 %. Vyberte období v pravém horním rohu.
-      </div>
+      <PageHeader title="Cost analytics – CZK / USD" subtitle="Reálné peněžní náklady na AI providery (OpenAI, Anthropic, …). Cost ratio = podíl nákladů na obratu – cíl ≤ 20 %. Vyberte období vpravo nahoře." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <Kpi label="Náklady CZK" value={fmtCzk(totalCzk)} sub={fmtUsd(totalUsd, { compact: true })} />
+        <Kpi label="Náklady CZK" value={fmtCzk(totalCzk)} sub={fmtUsd(totalUsd, { compact: true })} tooltip="Celkové náklady na AI providery v CZK za zvolené období." />
         <Kpi
           label="Cost ratio"
           value={ratio != null ? fmtPct(ratio) : "N/A"}
           sub={ratio == null ? "Zadejte obrat" : "cíl ≤ 20 %"}
           status={ratioStatus(ratio)}
+          tooltip="Poměr nákladů vůči obratu za období. Cíl je udržet pod 20 %."
         />
-        <Kpi label="Obrat (perioda)" value={fmtCzk(revenue)} />
+        <Kpi label="Obrat (perioda)" value={fmtCzk(revenue)} tooltip="Obrat zákazníků za dané období (zadaný v Settings → Revenue)." />
         <Kpi
           label="Δ vs. předchozí období"
           value={dp != null ? `${dp >= 0 ? "+" : ""}${fmtPct(dp)}` : "—"}
           status={dp == null ? "unknown" : dp > 0 ? "bad" : "good"}
+          tooltip="Procentuální změna nákladů oproti předchozímu stejně dlouhému období."
         />
       </div>
 
@@ -91,17 +89,16 @@ export default async function CostView({
         <StackedBarByService data={stackedData} serviceCodes={services.map((s) => s.code)} serviceColors={serviceColors} />
       </Section>
 
-      <Section title={`Breakdown podle funkcí (${fnBuckets.length})`}>
+      <Section title={`Breakdown podle služeb (${fnBuckets.length})`}>
         <div className="overflow-auto max-h-96">
           <table className="table">
             <thead>
               <tr>
                 <th>Služba</th>
-                <th>Funkce</th>
-                <th className="text-right">Usage</th>
-                <th className="text-right">Náklady USD</th>
-                <th className="text-right">Náklady CZK</th>
-                <th className="text-right">% z celku</th>
+                <th>Usage</th>
+                <th>Náklady USD</th>
+                <th>Náklady CZK</th>
+                <th>% z celku</th>
               </tr>
             </thead>
             <tbody>
@@ -112,16 +109,15 @@ export default async function CostView({
                       {b.serviceName}
                     </span>
                   </td>
-                  <td>{b.functionName}</td>
-                  <td className="text-right text-muted">
+                  <td className="text-muted">
                     {fmtNumber(b.inputTokens + b.outputTokens + b.units, { compact: true })}
                   </td>
-                  <td className="text-right font-mono">{fmtUsd(b.costUsd, { compact: true })}</td>
-                  <td className="text-right font-mono">{fmtCzk(b.costCzk)}</td>
-                  <td className="text-right text-muted">{fmtPct(b.costCzk / Math.max(totalCzk, 1), 1)}</td>
+                  <td className="font-mono">{fmtUsd(b.costUsd, { compact: true })}</td>
+                  <td className="font-mono">{fmtCzk(b.costCzk)}</td>
+                  <td className="text-muted">{fmtPct(b.costCzk / Math.max(totalCzk, 1), 1)}</td>
                 </tr>
               ))}
-              {fnBuckets.length === 0 && <tr><td colSpan={6} className="text-center text-muted py-6">Žádná data.</td></tr>}
+              {fnBuckets.length === 0 && <tr><td colSpan={5} className="text-center text-muted py-6">Žádná data.</td></tr>}
             </tbody>
           </table>
         </div>

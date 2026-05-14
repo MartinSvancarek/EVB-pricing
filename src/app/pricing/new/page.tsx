@@ -13,19 +13,23 @@ export default async function NewPricingPage() {
 export function PricingForm({
   functions,
   initial,
+  returnUrl,
 }: {
   functions: Awaited<ReturnType<typeof prisma.function.findMany>>;
   initial: any;
+  returnUrl?: string;
 }) {
+  const backHref = returnUrl || "/pricing";
   return (
     <>
       <PageHeader
         title={initial ? "Editace ceny" : "Nová cena"}
         subtitle="Definujte pricing pro model × provider."
-        actions={<Link href="/pricing" className="btn">Zpět</Link>}
+        actions={<Link href={backHref} className="btn">Zpět</Link>}
       />
       <form action={savePricing} className="card max-w-3xl space-y-4">
         {initial && <input type="hidden" name="id" defaultValue={initial.id} />}
+        {returnUrl && <input type="hidden" name="returnUrl" defaultValue={returnUrl} />}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Model</label>
@@ -91,7 +95,7 @@ export function PricingForm({
         <input type="hidden" name="markupCoefficient" value={initial?.markupCoefficient ?? "1"} />
         <div className="flex gap-2">
           <button className="btn-primary">Uložit</button>
-          <Link href="/pricing" className="btn">Zrušit</Link>
+          <Link href={backHref} className="btn">Zrušit</Link>
         </div>
       </form>
     </>

@@ -16,13 +16,9 @@ export default async function ScenariosPage() {
     <>
       <PageHeader
         title="Uložené scénáře"
-        subtitle="Dříve uložené what-if scénáře. Klikněte na řádek pro načtení do simulátoru."
+        subtitle="Kliknutím na název se otevře simulátor s předvyplněnými hodnotami. Tlačítkem Smazat ho trvale odstraníte."
         actions={<Link href="/simulation" className="btn">Zpět na simulaci</Link>}
       />
-
-      <div className="card mb-4 p-3 text-sm text-muted">
-        <strong className="text-text">Tip:</strong> Kliknutím na název scénáře se otevře simulátor s předvyplněnými hodnotami daného scénáře. Tlačítkem Smazat ho trvale odstraníte.
-      </div>
 
       {scenarios.length === 0 ? (
         <p className="text-muted">Zatím nemáte žádné scénáře.</p>
