@@ -60,7 +60,7 @@ export function PackagesTable({ regular, enterpriseMin, enterpriseMax }: Props) 
           <tr>
             <th className="min-w-[280px]">Typ balíčku</th>
             {columns.map((c) => (
-              <th key={c.pkg.id} className="text-right min-w-[120px]">
+              <th key={c.pkg.id} className="min-w-[120px]">
                 {c.label}
               </th>
             ))}
@@ -71,7 +71,7 @@ export function PackagesTable({ regular, enterpriseMin, enterpriseMax }: Props) 
             <tr key={row.key}>
               <td className="text-sm">{row.label}</td>
               {columns.map((c) => (
-                <td key={c.pkg.id} className="text-right">
+                <td key={c.pkg.id}>
                   <EditableCell
                     pkgId={c.pkg.id}
                     field={row.field as string}
@@ -108,7 +108,7 @@ function EditableCell({ pkgId, field, value }: { pkgId: string; field: string; v
     return (
       <button
         onClick={() => setEditing(true)}
-        className={`font-mono text-sm text-right hover:bg-panel2 px-2 py-0.5 rounded w-full ${isPending ? "opacity-50" : ""}`}
+        className={`font-mono text-sm text-left hover:bg-panel2 px-2 py-0.5 rounded w-full ${isPending ? "opacity-50" : ""}`}
       >
         {fmtNum(value)}
       </button>
@@ -126,7 +126,7 @@ function EditableCell({ pkgId, field, value }: { pkgId: string; field: string; v
         if (e.key === "Enter") (e.target as HTMLInputElement).blur();
         if (e.key === "Escape") { setV(value != null ? String(value) : ""); setEditing(false); }
       }}
-      className="input w-28 font-mono text-right"
+      className="input w-28 font-mono"
     />
   );
 }
