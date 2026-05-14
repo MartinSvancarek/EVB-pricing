@@ -280,8 +280,9 @@ function InlineDropdown({ id, field, value, options, allowNew, nullable }: {
         if (e.target.value === "__new__") { setAddingNew(true); return; }
         commit(e.target.value);
       }}
-      onBlur={() => setEditing(false)}
+      onBlur={() => setTimeout(() => setEditing(false), 150)}
       className="input text-xs w-28"
+      size={Math.min(options.length + (nullable ? 1 : 0) + (allowNew ? 1 : 0), 8)}
     >
       {nullable && <option value="">— žádný —</option>}
       {options.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -323,8 +324,9 @@ function InlineServiceDropdown({ id, functionId, functions }: { id: string; func
           await inlineUpdatePricing(id, { functionId: newFnId });
         });
       }}
-      onBlur={() => setEditing(false)}
+      onBlur={() => setTimeout(() => setEditing(false), 150)}
       className="input text-xs w-32"
+      size={Math.min(functions.length, 8)}
     >
       {functions.map((f) => <option key={f.id} value={f.id}>{f.serviceName} · {f.name}</option>)}
     </select>
@@ -360,8 +362,9 @@ function InlineStatus({ id, status }: { id: string; status: "active" | "inactive
           await inlineUpdatePricing(id, { status: next });
         });
       }}
-      onBlur={() => setEditing(false)}
+      onBlur={() => setTimeout(() => setEditing(false), 150)}
       className="input text-xs"
+      size={2}
     >
       <option value="active">active</option>
       <option value="inactive">inactive</option>

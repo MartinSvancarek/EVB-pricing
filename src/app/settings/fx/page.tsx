@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { PageHeader, Section } from "@/components/ui";
 import { fmtDate } from "@/lib/format";
 import { addFx } from "../actions";
+import { FxHistoryTable } from "./FxHistoryTable";
 
 export const dynamic = "force-dynamic";
 
@@ -24,20 +25,7 @@ export default async function FxPage() {
         </form>
       </Section>
       <Section title="Historie kurzů">
-        <table className="table">
-          <thead>
-            <tr><th>Datum</th><th>CZK / USD</th><th>Zdroj</th></tr>
-          </thead>
-          <tbody>
-            {rates.map((r) => (
-              <tr key={r.id}>
-                <td>{fmtDate(r.date)}</td>
-                <td className="font-mono">{r.czkPerUsd.toFixed(4)}</td>
-                <td className="text-muted text-xs">{r.source}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <FxHistoryTable rates={rates.map((r) => ({ id: r.id, date: r.date.toISOString(), czkPerUsd: r.czkPerUsd, source: r.source }))} />
       </Section>
     </>
   );

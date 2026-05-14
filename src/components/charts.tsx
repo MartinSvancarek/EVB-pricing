@@ -21,6 +21,7 @@ import {
 
 const axisStyle = { fontSize: 11, fill: "#8a93a6" };
 const grid = "#222735";
+const tooltipStyle = { background: "#11141b", border: "1px solid #222735", padding: "6px 10px", fontSize: 12, lineHeight: "1.4" };
 
 export function CostTrendChart({
   data,
@@ -37,7 +38,7 @@ export function CostTrendChart({
           <XAxis dataKey="date" tick={axisStyle} stroke={grid} />
           <YAxis yAxisId="l" tick={axisStyle} stroke={grid} />
           <YAxis yAxisId="r" orientation="right" tick={axisStyle} stroke={grid} domain={[0, 0.4]} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} />
-          <Tooltip contentStyle={{ background: "#11141b", border: "1px solid #222735" }} />
+          <Tooltip contentStyle={tooltipStyle} wrapperStyle={{ fontSize: 12 }} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Bar yAxisId="l" dataKey="cost" name="Náklady CZK" fill="#5b8cff" />
           <Line yAxisId="r" dataKey="ratio" name="Cost ratio" stroke="#e0a23a" strokeWidth={2} dot={false} />
@@ -64,7 +65,7 @@ export function StackedAreaByService({
           <CartesianGrid stroke={grid} strokeDasharray="3 3" />
           <XAxis dataKey="date" tick={axisStyle} stroke={grid} />
           <YAxis tick={axisStyle} stroke={grid} />
-          <Tooltip contentStyle={{ background: "#11141b", border: "1px solid #222735" }} />
+          <Tooltip contentStyle={tooltipStyle} wrapperStyle={{ fontSize: 12 }} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           {serviceCodes.map((code) => (
             <Area
@@ -99,7 +100,7 @@ export function StackedBarByService({
           <CartesianGrid stroke={grid} strokeDasharray="3 3" />
           <XAxis dataKey="date" tick={axisStyle} stroke={grid} />
           <YAxis tick={axisStyle} stroke={grid} />
-          <Tooltip contentStyle={{ background: "#11141b", border: "1px solid #222735" }} />
+          <Tooltip contentStyle={tooltipStyle} wrapperStyle={{ fontSize: 12 }} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           {serviceCodes.map((code) => (
             <Bar key={code} dataKey={code} stackId="1" fill={serviceColors[code] ?? "#5b8cff"} />
@@ -124,7 +125,7 @@ export function ServiceDonut({
               <Cell key={i} fill={d.color} />
             ))}
           </Pie>
-          <Tooltip contentStyle={{ background: "#11141b", border: "1px solid #222735" }} />
+          <Tooltip contentStyle={tooltipStyle} wrapperStyle={{ fontSize: 12 }} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
         </PieChart>
       </ResponsiveContainer>
@@ -144,7 +145,7 @@ export function CompareBarChart({
           <CartesianGrid stroke={grid} strokeDasharray="3 3" />
           <XAxis dataKey="name" tick={axisStyle} stroke={grid} />
           <YAxis tick={axisStyle} stroke={grid} />
-          <Tooltip contentStyle={{ background: "#11141b", border: "1px solid #222735" }} />
+          <Tooltip contentStyle={tooltipStyle} wrapperStyle={{ fontSize: 12 }} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Bar dataKey="current" name="Aktuální CZK" fill="#5b8cff" />
           <Bar dataKey="simulated" name="Simulované CZK" fill="#e0a23a" />

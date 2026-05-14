@@ -50,6 +50,8 @@ export function SimulationClient({
   const [isPending, start] = useTransition();
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
 
+  const [simulated, setSimulated] = useState(!!loadedScenario);
+
   const sumShare = Object.values(shares).reduce((s, v) => s + (Number(v) || 0), 0);
   const actualTotalCzk = baseline.reduce((s, b) => s + b.actualCostCzk, 0);
 
@@ -185,6 +187,17 @@ export function SimulationClient({
           </table>
         </Section>
 
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setSimulated(true)}
+            className="btn-primary text-base px-5 py-2"
+            disabled={Math.abs(sumShare - 100) > 1}
+          >
+            Simulovat
+          </button>
+          {Math.abs(sumShare - 100) > 1 && <span className="text-xs text-bad self-center">Suma % musí být 100</span>}
+        </div>
+
         <Section title="Uložit scénář">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -205,6 +218,7 @@ export function SimulationClient({
       </div>
 
       {/* RIGHT: Results */}
+      {simulated && (
       <div>
         <div className="grid grid-cols-2 gap-4 mb-4">
           <Kpi label="Cost ratio – aktuální" value={actualRatio != null ? fmtPct(actualRatio) : "—"} status={ratioStatus(actualRatio)} />
@@ -260,6 +274,7 @@ export function SimulationClient({
           </table>
         </Section>
       </div>
+      )}
     </div>
   );
 }

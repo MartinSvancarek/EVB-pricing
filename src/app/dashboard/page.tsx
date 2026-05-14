@@ -44,8 +44,23 @@ export default async function DashboardPage() {
   // service breakdown
   const services = mtdData.services;
   const serviceColors: Record<string, string> = Object.fromEntries(services.map((s) => [s.code, s.color]));
-  const buckets = bucketBy(mtdData.enriched, "service");
-  const topService = buckets[0];
+  const rawBuckets = bucketBy(mtdData.enriched, "service");
+  // Ensure all services are represented (even those with 0 data)
+  const buckets = services.map((svc) => {
+    const existing = rawBuckets.find((b) => b.serviceId === svc.id);
+    return existing ?? {
+      serviceId: svc.id,
+      serviceCode: svc.code,
+      serviceName: svc.name,
+      serviceColor: svc.color,
+      inputTokens: 0,
+      outputTokens: 0,
+      units: 0,
+      costUsd: 0,
+      costCzk: 0,
+    };
+  });
+  const topService = rawBuckets[0];
 
   // 30d trend with daily ratio (use proportional revenue)
   const dailyRevenue = mtdRevenue / Math.max(1, Math.round((mtd.to.getTime() - mtd.from.getTime()) / 86_400_000) + 1);
