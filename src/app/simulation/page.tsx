@@ -31,13 +31,19 @@ export default async function SimulationPage({
   );
 
   // Per service baseline
+  const servicesWithCost = services.filter((svc) => buckets.find((x) => x.serviceId === svc.id && x.costCzk > 0));
+  const hasMultipleServices = servicesWithCost.length > 1;
+
   const baseline = services.map((svc) => {
     const b = buckets.find((x) => x.serviceId === svc.id);
     const tokens = b ? b.inputTokens + b.outputTokens : 0;
     const units = b ? b.units : 0;
     const usage = tokens + units;
     const costCzk = b ? b.costCzk : 0;
-    const sharePct = totalCzk > 0 ? Math.round((costCzk / totalCzk) * 100) : 0;
+    // If only one service has real cost data, distribute initial shares equally across all services
+    const sharePct = hasMultipleServices
+      ? (totalCzk > 0 ? Math.round((costCzk / totalCzk) * 100) : 0)
+      : Math.round(100 / services.length);
     const costPerUnit = usage > 0 ? costCzk / usage : 0;
     return {
       serviceId: svc.id,

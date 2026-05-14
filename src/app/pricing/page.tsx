@@ -60,6 +60,9 @@ export default async function PricingPage({
           priceUsd: p.priceUsd,
           inputPriceUsd: p.inputPriceUsd,
           outputPriceUsd: p.outputPriceUsd,
+          resolution: p.resolution,
+          credits: p.credits,
+          durationSec: p.durationSec,
           status: p.status as "active" | "inactive",
           updatedAt: p.updatedAt.toISOString(),
         }))}

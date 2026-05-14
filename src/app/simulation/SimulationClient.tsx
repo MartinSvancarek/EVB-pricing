@@ -124,7 +124,12 @@ export function SimulationClient({
           </div>
         </Section>
 
-        <Section title="Alokace nákladů po službách" actions={<span className="text-xs text-muted">Celé čísla 0–100</span>}>
+        <Section title="Alokace nákladů po službách" actions={
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted">Výchozí hodnoty z reálných nákladů za 30 dní</span>
+            <button onClick={reset} className="btn text-xs">Reset</button>
+          </div>
+        }>
           <table className="table">
             <thead>
               <tr>

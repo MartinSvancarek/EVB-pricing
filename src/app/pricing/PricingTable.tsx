@@ -17,6 +17,9 @@ export type PricingRow = {
   priceUsd: number | null;
   inputPriceUsd: number | null;
   outputPriceUsd: number | null;
+  resolution: string | null;
+  credits: number | null;
+  durationSec: number | null;
   status: "active" | "inactive";
   updatedAt: string;
 };
@@ -108,6 +111,9 @@ export function PricingTable({ pricings, services, providers, functions, fx, ini
               <th title="Hlavní cena v USD + CZK (per image, per second, per minute, per request)">Cena USD</th>
               <th title="Vstupní cena za 1M tokenů + CZK (jen chat / research modely)">Vstup USD</th>
               <th title="Výstupní cena za 1M tokenů + CZK (jen chat / research modely)">Výstup USD</th>
+              <th title="Rozlišení výstupu (720p / 1080p / 4K) – video/grafika modely">Rozlišení</th>
+              <th title="Spotřeba kreditů na 1 generování">Kredity</th>
+              <th title="Délka výstupního videa v sekundách">Délka (s)</th>
               <th title="Active = aktuálně používaný, Inactive = deaktivovaný">Status</th>
               <th title="Datum poslední úpravy záznamu">Upraveno</th>
               <th></th>
@@ -118,7 +124,7 @@ export function PricingTable({ pricings, services, providers, functions, fx, ini
               <PricingRowItem key={p.id} row={p} fx={fx} returnUrl={returnUrl} providers={providers} functions={functions} />
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={10} className="text-center text-muted py-8">Žádné záznamy odpovídající filtru.</td></tr>
+              <tr><td colSpan={13} className="text-center text-muted py-8">Žádné záznamy odpovídající filtru.</td></tr>
             )}
           </tbody>
         </table>
@@ -165,6 +171,9 @@ function PricingRowItem({ row: p, fx, returnUrl, providers, functions }: { row: 
       <td>
         <InlinePrice id={p.id} field="outputPriceUsd" value={p.outputPriceUsd} disabled={p.billingType !== "token_io"} fx={fx} />
       </td>
+      <td className="text-xs text-muted">{p.resolution ?? "—"}</td>
+      <td className="text-xs text-muted font-mono">{p.credits != null ? p.credits : "—"}</td>
+      <td className="text-xs text-muted font-mono">{p.durationSec != null ? `${p.durationSec}s` : "—"}</td>
       <td>
         <InlineStatus id={p.id} status={p.status} />
       </td>
@@ -282,7 +291,6 @@ function InlineDropdown({ id, field, value, options, allowNew, nullable }: {
       }}
       onBlur={() => setTimeout(() => setEditing(false), 150)}
       className="input text-xs w-28"
-      size={Math.min(options.length + (nullable ? 1 : 0) + (allowNew ? 1 : 0), 8)}
     >
       {nullable && <option value="">— žádný —</option>}
       {options.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -326,7 +334,6 @@ function InlineServiceDropdown({ id, functionId, functions }: { id: string; func
       }}
       onBlur={() => setTimeout(() => setEditing(false), 150)}
       className="input text-xs w-32"
-      size={Math.min(functions.length, 8)}
     >
       {functions.map((f) => <option key={f.id} value={f.id}>{f.serviceName} · {f.name}</option>)}
     </select>
@@ -364,7 +371,6 @@ function InlineStatus({ id, status }: { id: string; status: "active" | "inactive
       }}
       onBlur={() => setTimeout(() => setEditing(false), 150)}
       className="input text-xs"
-      size={2}
     >
       <option value="active">active</option>
       <option value="inactive">inactive</option>

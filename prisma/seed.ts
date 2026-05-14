@@ -184,12 +184,45 @@ async function main() {
   const videoFn = await prisma.function.create({
     data: { serviceId: svcMap.video, code: "video_generation", name: "Generování videa", dataSource: "manual" },
   });
+  const videoMeta: Record<string, { resolution?: string; credits?: number; durationSec?: number }> = {
+    "Kling 1.5": { resolution: "1080p", credits: 10, durationSec: 5 },
+    "Kling 1.6": { resolution: "1080p", credits: 10, durationSec: 5 },
+    "Kling 2.0": { resolution: "1080p", credits: 20, durationSec: 5 },
+    "Kling 2.1": { resolution: "1080p", credits: 20, durationSec: 10 },
+    "Kling 2.5": { resolution: "4K", credits: 35, durationSec: 10 },
+    "Kling 2.6": { resolution: "4K", credits: 40, durationSec: 10 },
+    "Google Veo 2": { resolution: "1080p", credits: 25, durationSec: 8 },
+    "Google Veo 3.1 Fast": { resolution: "1080p", credits: 30, durationSec: 8 },
+    "Google Veo 3.1 Quality": { resolution: "4K", credits: 50, durationSec: 8 },
+    "Veo 3.1 Lite": { resolution: "720p", credits: 15, durationSec: 5 },
+    "Wanx 2.1": { resolution: "1080p", credits: 12, durationSec: 5 },
+    "Wan 2.2": { resolution: "1080p", credits: 12, durationSec: 5 },
+    "Wan 2.5": { resolution: "1080p", credits: 18, durationSec: 10 },
+    "Wan 2.6": { resolution: "4K", credits: 25, durationSec: 10 },
+    "Ray2": { resolution: "1080p", credits: 20, durationSec: 5 },
+    "Hailuo": { resolution: "1080p", credits: 15, durationSec: 5 },
+    "Hailuo 2": { resolution: "1080p", credits: 20, durationSec: 10 },
+    "Hailuo 2.3": { resolution: "4K", credits: 30, durationSec: 10 },
+    "Runway Gen-3": { resolution: "1080p", credits: 25, durationSec: 10 },
+    "Runway Gen-4 Turbo": { resolution: "4K", credits: 40, durationSec: 10 },
+    "Hunyuan": { resolution: "1080p", credits: 18, durationSec: 5 },
+    "Waver 1.0": { resolution: "1080p", credits: 15, durationSec: 5 },
+    "Seedance 1.0 Lite": { resolution: "720p", credits: 10, durationSec: 5 },
+    "Seedance 1.0 Pro": { resolution: "1080p", credits: 30, durationSec: 10 },
+    "Sora 2": { resolution: "1080p", credits: 50, durationSec: 10 },
+    "Sora 2 Pro": { resolution: "4K", credits: 100, durationSec: 20 },
+    "Sora 2 Storyboard": { resolution: "1080p", credits: 60, durationSec: 15 },
+  };
   for (const m of videoModels) {
+    const meta = videoMeta[m] ?? {};
     await prisma.modelPricing.create({
       data: {
         functionId: videoFn.id, provider: providerFor(m), model: m,
         billingType: "video_second", priceUsd: +(0.3 + Math.random() * 0.5).toFixed(4),
         unitLabel: "1 second", status: "active", updatedBy: "martin@everbot.cz",
+        resolution: meta.resolution ?? null,
+        credits: meta.credits ?? null,
+        durationSec: meta.durationSec ?? null,
       },
     });
   }

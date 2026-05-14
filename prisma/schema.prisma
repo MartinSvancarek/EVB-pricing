@@ -54,6 +54,9 @@ model ModelPricing {
   outputPriceUsd    Float?
   unitPriceUsd      Float?
   unitLabel         String?
+  resolution        String?   // e.g. "1920x1080", "4K" – for graphics/video models
+  credits           Float?    // credit cost per generation (video/graphics)
+  durationSec       Float?    // output duration in seconds (video models)
   markupCoefficient Float     @default(1.0)
   internalNote      String?
   // active | inactive
