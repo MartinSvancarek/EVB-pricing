@@ -44,7 +44,16 @@ export function SimulationClient({
   const [shares, setShares] = useState<Record<string, number>>(
     loadedScenario?.shares ?? Object.fromEntries(baseline.map((b) => [b.serviceId, b.actualSharePercent])),
   );
-  const [manualCpt, setManualCpt] = useState<Record<string, number>>({});
+  const [manualCpt, setManualCpt] = useState<Record<string, number>>(() => {
+    // Auto-fill CPT for services without data using average from services that have data
+    const withData = baseline.filter((b) => b.hasData && b.costPerUnit > 0);
+    const avgCpt = withData.length > 0 ? withData.reduce((s, b) => s + b.costPerUnit, 0) / withData.length : 0;
+    const initial: Record<string, number> = {};
+    for (const b of baseline) {
+      if (!b.hasData) initial[b.serviceId] = avgCpt;
+    }
+    return initial;
+  });
   const [name, setName] = useState(loadedScenario?.name ?? "");
   const [desc, setDesc] = useState(loadedScenario?.description ?? "");
   const [isPending, start] = useTransition();

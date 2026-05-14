@@ -170,4 +170,18 @@ model Package {
   sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  history           PackageHistory[]
+}
+
+model PackageHistory {
+  id                String   @id @default(cuid())
+  packageId         String
+  package           Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  field             String   // which field changed
+  oldValue          Float?
+  newValue          Float?
+  changedBy         String?
+  changedAt         DateTime @default(now())
+
+  @@index([packageId, changedAt])
 }

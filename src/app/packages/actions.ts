@@ -9,6 +9,16 @@ export async function updatePackageField(id: string, field: string, value: numbe
     "imageLimit", "videoLimit",
   ];
   if (!allowed.includes(field)) throw new Error("Invalid field");
-  await prisma.package.update({ where: { id }, data: { [field]: value } });
+
+  const current = await prisma.package.findUniqueOrThrow({ where: { id } });
+  const oldValue = (current as any)[field] as number | null;
+
+  await prisma.$transaction([
+    prisma.package.update({ where: { id }, data: { [field]: value } }),
+    prisma.packageHistory.create({
+      data: { packageId: id, field, oldValue, newValue: value, changedBy: "admin" },
+    }),
+  ]);
+
   revalidatePath("/packages");
 }
