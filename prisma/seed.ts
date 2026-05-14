@@ -50,13 +50,13 @@ async function main() {
 
   // Packages (balíčky)
   const packages = [
-    { code: "free", name: "Balíček zdarma", monthlyPriceCzk: 0, yearlyPriceCzk: 0, monthlyInYearly: 0, twoYearPriceCzk: null, threeYearPriceCzk: null, credits: 5_000, creditsNote: null, sortOrder: 0 },
-    { code: "basic", name: "Basic", monthlyPriceCzk: 590, yearlyPriceCzk: 7_080, monthlyInYearly: 590, twoYearPriceCzk: 14_160, threeYearPriceCzk: 21_240, credits: 20_000, creditsNote: null, sortOrder: 1 },
-    { code: "business", name: "Business", monthlyPriceCzk: 2_490, yearlyPriceCzk: 29_880, monthlyInYearly: 2_490, twoYearPriceCzk: 89_640, threeYearPriceCzk: 89_640, credits: 300_000, creditsNote: null, sortOrder: 2 },
-    { code: "creator", name: "Creator", monthlyPriceCzk: 4_990, yearlyPriceCzk: 59_880, monthlyInYearly: 4_990, twoYearPriceCzk: 119_760, threeYearPriceCzk: 179_640, credits: 700_000, creditsNote: null, sortOrder: 3 },
-    { code: "premium", name: "Premium", monthlyPriceCzk: 6_990, yearlyPriceCzk: 83_880, monthlyInYearly: 6_990, twoYearPriceCzk: 167_760, threeYearPriceCzk: 251_640, credits: 1_000_000, creditsNote: null, sortOrder: 4 },
-    { code: "unlimited", name: "Unlimited", monthlyPriceCzk: null, yearlyPriceCzk: null, monthlyInYearly: null, twoYearPriceCzk: null, threeYearPriceCzk: null, credits: 300_000, creditsNote: "Limit 300 000 kreditů (marketed as unlimited)", sortOrder: 5 },
-    { code: "enterprise", name: "Enterprise", monthlyPriceCzk: null, yearlyPriceCzk: null, monthlyInYearly: null, twoYearPriceCzk: null, threeYearPriceCzk: null, credits: 1_200_000, creditsNote: "Custom: 1,2M–50M kreditů, roční cena 100 656–4 194 000 Kč s DPH", sortOrder: 6 },
+    { code: "free", name: "Balíček zdarma", monthlyPriceCzk: 0, yearlyPriceCzk: 0, monthlyInYearly: 0, twoYearPriceCzk: null, threeYearPriceCzk: null, credits: 5, imageLimit: 125, videoLimit: 5, isCustom: false, creditsNote: null, sortOrder: 0 },
+    { code: "basic", name: "Basic", monthlyPriceCzk: 590, yearlyPriceCzk: 7_080, monthlyInYearly: 590, twoYearPriceCzk: 14_160, threeYearPriceCzk: 21_240, credits: 20_000, imageLimit: 500, videoLimit: 23, isCustom: false, creditsNote: null, sortOrder: 1 },
+    { code: "business", name: "Business", monthlyPriceCzk: 2_490, yearlyPriceCzk: 29_880, monthlyInYearly: 2_490, twoYearPriceCzk: 59_760, threeYearPriceCzk: 89_640, credits: 300_000, imageLimit: 7_500, videoLimit: 352, isCustom: false, creditsNote: null, sortOrder: 2 },
+    { code: "creator", name: "Creator", monthlyPriceCzk: 4_990, yearlyPriceCzk: 59_880, monthlyInYearly: 4_990, twoYearPriceCzk: 119_760, threeYearPriceCzk: 179_640, credits: 700_000, imageLimit: 17_500, videoLimit: 823, isCustom: false, creditsNote: null, sortOrder: 3 },
+    { code: "premium", name: "Premium", monthlyPriceCzk: 6_990, yearlyPriceCzk: 83_880, monthlyInYearly: 6_990, twoYearPriceCzk: 167_760, threeYearPriceCzk: 251_640, credits: 1_000_000, imageLimit: 25_000, videoLimit: 1_176, isCustom: false, creditsNote: null, sortOrder: 4 },
+    { code: "enterprise_min", name: "Enterprise (min)", monthlyPriceCzk: null, yearlyPriceCzk: 100_656, monthlyInYearly: 8_388, twoYearPriceCzk: 201_312, threeYearPriceCzk: 301_968, credits: 1_200_000, imageLimit: 30_000, videoLimit: 1_411, isCustom: true, creditsNote: "Custom – spodní hranice", sortOrder: 5 },
+    { code: "enterprise_max", name: "Enterprise (max)", monthlyPriceCzk: null, yearlyPriceCzk: 4_194_000, monthlyInYearly: 349_500, twoYearPriceCzk: 8_388_000, threeYearPriceCzk: 12_582_000, credits: 50_000_000, imageLimit: 1_250_000, videoLimit: 58_800, isCustom: true, creditsNote: "Custom – horní hranice", sortOrder: 6 },
   ];
   for (const p of packages) {
     await prisma.package.create({ data: p as any });

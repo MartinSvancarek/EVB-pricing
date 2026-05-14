@@ -153,18 +153,21 @@ model AuditLog {
 }
 
 model Package {
-  id              String   @id @default(cuid())
-  code            String   @unique
-  name            String
-  monthlyPriceCzk Float?
-  yearlyPriceCzk  Float?
-  monthlyInYearly Float?
-  twoYearPriceCzk Float?
+  id                String   @id @default(cuid())
+  code              String   @unique
+  name              String
+  monthlyPriceCzk   Float?
+  yearlyPriceCzk    Float?
+  monthlyInYearly   Float?
+  twoYearPriceCzk   Float?
   threeYearPriceCzk Float?
-  credits         Float
-  creditsNote     String?
-  isActive        Boolean  @default(true)
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  credits           Float
+  imageLimit        Float?   // max image generations per month
+  videoLimit        Float?   // max video generations per month
+  isCustom          Boolean  @default(false) // enterprise: custom range
+  creditsNote       String?
+  isActive          Boolean  @default(true)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

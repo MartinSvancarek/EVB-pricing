@@ -7,12 +7,14 @@ import {
   BarChart3,
   FlaskConical,
   Settings,
+  Package,
 } from "lucide-react";
 import clsx from "clsx";
 
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/pricing", label: "Pricing", icon: Tags },
+  { href: "/packages", label: "Balíčky", icon: Package },
   { href: "/cost-analytics/cost", label: "Cost analytics", icon: BarChart3 },
   { href: "/simulation", label: "Simulation", icon: FlaskConical },
   { href: "/settings/fx", label: "Settings", icon: Settings },
