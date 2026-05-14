@@ -1,0 +1,15 @@
+import { prisma } from "@/lib/db";
+import { PricingForm } from "../new/page";
+import { notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
+export default async function EditPricing({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const [pricing, functions] = await Promise.all([
+    prisma.modelPricing.findUnique({ where: { id } }),
+    prisma.function.findMany({ include: { service: true }, orderBy: { name: "asc" } }),
+  ]);
+  if (!pricing) notFound();
+  return <PricingForm functions={functions} initial={pricing} />;
+}

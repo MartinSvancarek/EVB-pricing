@@ -1,0 +1,148 @@
+// Prisma schema – EVB Pricing MVP
+// SQLite for fast local dev. Swap provider to "postgresql" for production.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Service {
+  id          String     @id @default(cuid())
+  code        String     @unique
+  name        String
+  color       String     @default("#5b8cff")
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  functions   Function[]
+  allocations ScenarioAllocation[]
+}
+
+model Function {
+  id          String         @id @default(cuid())
+  serviceId   String
+  service     Service        @relation(fields: [serviceId], references: [id])
+  code        String
+  name        String
+  description String?
+  // manual | grafana | api | missing
+  dataSource  String         @default("missing")
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  pricings    ModelPricing[]
+  usages      UsageRecord[]
+
+  @@unique([serviceId, code])
+}
+
+model ModelPricing {
+  id                String    @id @default(cuid())
+  functionId        String
+  function          Function  @relation(fields: [functionId], references: [id])
+  provider          String
+  model             String
+  // token_io | token_unit | image | audio_second | video_second | request | minute
+  billingType       String
+  inputPriceUsd     Float?
+  outputPriceUsd    Float?
+  unitPriceUsd      Float?
+  unitLabel         String?
+  markupCoefficient Float     @default(1.0)
+  internalNote      String?
+  // active | inactive
+  status            String    @default("active")
+  validFrom         DateTime?
+  validTo           DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  updatedBy         String?
+}
+
+model UsageRecord {
+  id           String   @id @default(cuid())
+  functionId   String
+  function     Function @relation(fields: [functionId], references: [id])
+  provider     String
+  model        String
+  periodStart  DateTime
+  inputTokens  BigInt?
+  outputTokens BigInt?
+  units        BigInt?
+  // manual | grafana | api
+  source       String   @default("manual")
+  ingestedAt   DateTime @default(now())
+
+  @@index([functionId, periodStart])
+  @@index([periodStart])
+  @@index([model, periodStart])
+}
+
+model FxRate {
+  id         String   @id @default(cuid())
+  date       DateTime @unique
+  czkPerUsd  Float
+  // manual | cnb
+  source     String   @default("manual")
+  createdAt  DateTime @default(now())
+}
+
+model Revenue {
+  id          String   @id @default(cuid())
+  periodStart DateTime
+  periodEnd   DateTime
+  amountCzk   Float
+  note        String?
+  createdAt   DateTime @default(now())
+
+  @@unique([periodStart, periodEnd])
+}
+
+model SimulationScenario {
+  id                    String               @id @default(cuid())
+  name                  String
+  description           String?
+  totalTokensAssumption BigInt
+  revenueCzkAssumption  Float
+  fxRate                Float
+  createdBy             String?
+  createdAt             DateTime             @default(now())
+  allocations           ScenarioAllocation[]
+}
+
+model ScenarioAllocation {
+  id           String             @id @default(cuid())
+  scenarioId   String
+  scenario     SimulationScenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  serviceId    String
+  service      Service            @relation(fields: [serviceId], references: [id])
+  sharePercent Float
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  // admin | viewer
+  role      String   @default("viewer")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  userEmail  String?
+  // create | update | delete | archive
+  action     String
+  diff       String? // JSON string
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
