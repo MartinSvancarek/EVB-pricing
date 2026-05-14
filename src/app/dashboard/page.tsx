@@ -60,9 +60,6 @@ export default async function DashboardPage() {
     ...Object.fromEntries(services.map((s) => [s.code, Math.round(p.perService[s.code] ?? 0)])),
   }));
 
-  // top 10 functions
-  const fnBuckets = bucketBy(mtdData.enriched, "function").slice(0, 10);
-
   return (
     <>
       <PageHeader
@@ -105,52 +102,40 @@ export default async function DashboardPage() {
         </Section>
       </div>
 
-      <Section title="Top 10 funkcí podle nákladů (MTD)">
+      <Section title="Služby (MTD)">
         <table className="table">
           <thead>
             <tr>
               <th>Služba</th>
+              <th>Náklady USD</th>
               <th>Náklady CZK</th>
               <th>% z celku</th>
               <th>Tokeny</th>
             </tr>
           </thead>
           <tbody>
-            {fnBuckets.map((b) => (
-              <tr key={b.functionId}>
+            {buckets.map((b) => (
+              <tr key={b.serviceId}>
                 <td>
                   <span className="badge" style={{ borderColor: `${b.serviceColor}55`, color: b.serviceColor }}>
                     {b.serviceName}
                   </span>
                 </td>
+                <td className="font-mono">{fmtUsd(b.costUsd, { compact: true })}</td>
                 <td className="font-mono">{fmtCzk(b.costCzk)}</td>
                 <td className="text-muted">{fmtPct(b.costCzk / Math.max(mtdCosts.czk, 1), 1)}</td>
                 <td className="text-muted">{fmtNumber(b.inputTokens + b.outputTokens, { compact: true })}</td>
               </tr>
             ))}
-            {fnBuckets.length === 0 && (
+            {buckets.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center text-muted py-6">
+                <td colSpan={5} className="text-center text-muted py-6">
                   Žádná data za období. Zkontrolujte tracking nebo seedněte databázi.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-      </Section>
-
-      <Section title="Služby">
-        <div className="flex flex-wrap gap-2">
-          {services.map((svc) => {
-            const b = buckets.find((x) => x.serviceId === svc.id);
-            return (
-              <div key={svc.id} className="badge px-3 py-1.5" style={{ borderColor: `${svc.color}55`, color: svc.color }}>
-                <span className="font-medium">{svc.name}</span>
-                {b && <span className="ml-1 text-muted text-xs">{fmtCzk(b.costCzk, { compact: true })}</span>}
-              </div>
-            );
-          })}
-        </div>
       </Section>
 
     </>

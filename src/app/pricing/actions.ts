@@ -79,7 +79,7 @@ export async function savePricing(formData: FormData) {
   redirect(returnUrl);
 }
 
-export async function inlineUpdatePricing(id: string, patch: Partial<{ priceUsd: number | null; inputPriceUsd: number | null; outputPriceUsd: number | null; unitPriceUsd: number | null; markupCoefficient: number; status: "active" | "inactive" }>) {
+export async function inlineUpdatePricing(id: string, patch: Partial<{ priceUsd: number | null; inputPriceUsd: number | null; outputPriceUsd: number | null; unitPriceUsd: number | null; markupCoefficient: number; status: "active" | "inactive"; provider: string; fallbackProvider: string | null; functionId: string }>) {
   const before = await prisma.modelPricing.findUnique({ where: { id } });
   const after = await prisma.modelPricing.update({ where: { id }, data: { ...patch, updatedBy: "martin@everbot.cz" } });
   await prisma.auditLog.create({

@@ -14,13 +14,14 @@ export default async function PricingPage({
   searchParams: Promise<{ service?: string; provider?: string; status?: string; q?: string }>;
 }) {
   const sp = await searchParams;
-  const [services, pricingsAll, fx] = await Promise.all([
+  const [services, pricingsAll, fx, functions] = await Promise.all([
     prisma.service.findMany({ orderBy: { name: "asc" } }),
     prisma.modelPricing.findMany({
       include: { function: { include: { service: true } } },
       orderBy: { model: "asc" },
     }),
     currentFx(),
+    prisma.function.findMany({ include: { service: true }, orderBy: { name: "asc" } }),
   ]);
 
   const providers = [...new Set(pricingsAll.map((p) => p.provider))].sort();
@@ -51,6 +52,7 @@ export default async function PricingPage({
           model: p.model,
           provider: p.provider,
           fallbackProvider: p.fallbackProvider,
+          functionId: p.functionId,
           serviceName: p.function.service.name,
           serviceCode: p.function.service.code,
           serviceColor: p.function.service.color,
@@ -63,6 +65,7 @@ export default async function PricingPage({
         }))}
         services={services.map((s) => ({ code: s.code, name: s.name }))}
         providers={providers}
+        functions={functions.map((f) => ({ id: f.id, name: f.name, serviceName: f.service.name, serviceCode: f.service.code }))}
         fx={fx ?? 23}
         initialFilters={{ service: sp.service ?? "", provider: sp.provider ?? "", status: sp.status ?? "active", q: sp.q ?? "" }}
       />

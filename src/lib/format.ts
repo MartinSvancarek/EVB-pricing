@@ -11,7 +11,7 @@ export function fmtCzk(value: number | null | undefined, opts: { compact?: boole
   return new Intl.NumberFormat("cs-CZ", {
     style: "currency",
     currency: "CZK",
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(value);
 }
 
@@ -29,7 +29,7 @@ export function fmtUsd(value: number | null | undefined, opts: { compact?: boole
     style: "currency",
     currency: "USD",
     minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
+    maximumFractionDigits: 2,
   }).format(value);
 }
 

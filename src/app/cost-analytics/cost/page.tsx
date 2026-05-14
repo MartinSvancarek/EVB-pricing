@@ -52,7 +52,7 @@ export default async function CostView({
 
   const buckets = bucketBy(data.enriched, "service");
   const donutData = buckets.map((b) => ({ name: b.serviceName, value: Math.round(b.costCzk), color: b.serviceColor }));
-  const fnBuckets = bucketBy(data.enriched, "function");
+  const svcBuckets = bucketBy(data.enriched, "service");
 
   return (
     <>
@@ -89,7 +89,7 @@ export default async function CostView({
         <StackedBarByService data={stackedData} serviceCodes={services.map((s) => s.code)} serviceColors={serviceColors} />
       </Section>
 
-      <Section title={`Breakdown podle služeb (${fnBuckets.length})`}>
+      <Section title={`Breakdown podle služeb (${svcBuckets.length})`}>
         <div className="overflow-auto max-h-96">
           <table className="table">
             <thead>
@@ -102,8 +102,8 @@ export default async function CostView({
               </tr>
             </thead>
             <tbody>
-              {fnBuckets.map((b) => (
-                <tr key={b.functionId}>
+              {svcBuckets.map((b) => (
+                <tr key={b.serviceId}>
                   <td>
                     <span className="badge" style={{ borderColor: `${b.serviceColor}55`, color: b.serviceColor }}>
                       {b.serviceName}
@@ -117,7 +117,7 @@ export default async function CostView({
                   <td className="text-muted">{fmtPct(b.costCzk / Math.max(totalCzk, 1), 1)}</td>
                 </tr>
               ))}
-              {fnBuckets.length === 0 && <tr><td colSpan={5} className="text-center text-muted py-6">Žádná data.</td></tr>}
+              {svcBuckets.length === 0 && <tr><td colSpan={5} className="text-center text-muted py-6">Žádná data.</td></tr>}
             </tbody>
           </table>
         </div>

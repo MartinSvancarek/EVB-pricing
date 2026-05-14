@@ -9,6 +9,7 @@ export type PricingRow = {
   model: string;
   provider: string;
   fallbackProvider: string | null;
+  functionId: string;
   serviceName: string;
   serviceCode: string;
   serviceColor: string;
@@ -20,21 +21,23 @@ export type PricingRow = {
   updatedAt: string;
 };
 
+type FnOption = { id: string; name: string; serviceName: string; serviceCode: string };
+
 type Props = {
   pricings: PricingRow[];
   services: Array<{ code: string; name: string }>;
   providers: string[];
+  functions: FnOption[];
   fx: number;
   initialFilters: { service: string; provider: string; status: string; q: string };
 };
 
-export function PricingTable({ pricings, services, providers, fx, initialFilters }: Props) {
+export function PricingTable({ pricings, services, providers, functions, fx, initialFilters }: Props) {
   const [service, setService] = useState(initialFilters.service);
   const [provider, setProvider] = useState(initialFilters.provider);
   const [status, setStatus] = useState(initialFilters.status || "active");
   const [q, setQ] = useState(initialFilters.q);
 
-  // Build returnUrl with current filters so edit form can return to same view
   const returnUrl = useMemo(() => {
     const sp = new URLSearchParams();
     if (service) sp.set("service", service);
@@ -94,7 +97,7 @@ export function PricingTable({ pricings, services, providers, fx, initialFilters
         </div>
       </div>
 
-      <div className="card overflow-auto max-h-[65vh] -mx-0">
+      <div className="card overflow-auto max-h-[65vh]">
         <table className="table">
           <thead>
             <tr>
@@ -102,10 +105,9 @@ export function PricingTable({ pricings, services, providers, fx, initialFilters
               <th title="Primární provider / dodavatel">Provider</th>
               <th title="Záložní provider pokud primární selže">Fallback</th>
               <th title="Služba (chat / video / grafika / audio / deep research / voice)">Služba</th>
-              <th className="text-left" title="Hlavní cena v USD (per image, per second, per minute, per request)">Cena USD</th>
-              <th className="text-left" title="Vstupní cena za 1M tokenů (jen chat / research modely)">Vstup USD</th>
-              <th className="text-left" title="Výstupní cena za 1M tokenů (jen chat / research modely)">Výstup USD</th>
-              <th className="text-left" title="Přepočet hlavní ceny na CZK podle aktuálního FX kurzu">CZK</th>
+              <th title="Hlavní cena v USD + CZK (per image, per second, per minute, per request)">Cena USD</th>
+              <th title="Vstupní cena za 1M tokenů + CZK (jen chat / research modely)">Vstup USD</th>
+              <th title="Výstupní cena za 1M tokenů + CZK (jen chat / research modely)">Výstup USD</th>
               <th title="Active = aktuálně používaný, Inactive = deaktivovaný">Status</th>
               <th title="Datum poslední úpravy záznamu">Upraveno</th>
               <th></th>
@@ -113,10 +115,10 @@ export function PricingTable({ pricings, services, providers, fx, initialFilters
           </thead>
           <tbody>
             {filtered.map((p) => (
-              <PricingRowItem key={p.id} row={p} fx={fx} returnUrl={returnUrl} />
+              <PricingRowItem key={p.id} row={p} fx={fx} returnUrl={returnUrl} providers={providers} functions={functions} />
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={11} className="text-center text-muted py-8">Žádné záznamy odpovídající filtru.</td></tr>
+              <tr><td colSpan={10} className="text-center text-muted py-8">Žádné záznamy odpovídající filtru.</td></tr>
             )}
           </tbody>
         </table>
@@ -125,49 +127,66 @@ export function PricingTable({ pricings, services, providers, fx, initialFilters
   );
 }
 
-function PricingRowItem({ row: p, fx, returnUrl }: { row: PricingRow; fx: number; returnUrl: string }) {
-  const baseUsd = p.billingType === "token_io" ? (p.inputPriceUsd ?? 0) : (p.priceUsd ?? p.inputPriceUsd ?? 0);
-  const czk = baseUsd * fx;
+function PricingRowItem({ row: p, fx, returnUrl, providers, functions }: { row: PricingRow; fx: number; returnUrl: string; providers: string[]; functions: FnOption[] }) {
   const sixtyDaysAgo = Date.now() - 60 * 86_400_000;
   const isStale = new Date(p.updatedAt).getTime() < sixtyDaysAgo;
 
   return (
     <tr className={isStale ? "border-l-2 border-l-warn" : ""}>
       <td className="font-medium">{p.model}</td>
-      <td className="text-muted">{p.provider}</td>
-      <td className="text-muted text-xs">{p.fallbackProvider ?? "—"}</td>
       <td>
-        <span className="badge" style={{ borderColor: `${p.serviceColor}55`, color: p.serviceColor }}>
-          {p.serviceName}
-        </span>
+        <InlineDropdown
+          id={p.id}
+          field="provider"
+          value={p.provider}
+          options={providers}
+          allowNew
+        />
       </td>
       <td>
-        <InlinePrice id={p.id} field="priceUsd" value={p.priceUsd} disabled={p.billingType === "token_io"} />
+        <InlineDropdown
+          id={p.id}
+          field="fallbackProvider"
+          value={p.fallbackProvider ?? ""}
+          options={providers}
+          allowNew
+          nullable
+        />
       </td>
       <td>
-        <InlinePrice id={p.id} field="inputPriceUsd" value={p.inputPriceUsd} disabled={p.billingType !== "token_io"} />
+        <InlineServiceDropdown id={p.id} functionId={p.functionId} functions={functions} />
       </td>
       <td>
-        <InlinePrice id={p.id} field="outputPriceUsd" value={p.outputPriceUsd} disabled={p.billingType !== "token_io"} />
+        <InlinePrice id={p.id} field="priceUsd" value={p.priceUsd} disabled={p.billingType === "token_io"} fx={fx} />
       </td>
-      <td className="text-muted font-mono text-xs">{czk ? fmtCzk(czk) : "—"}</td>
-      <td><StatusToggle id={p.id} status={p.status} /></td>
+      <td>
+        <InlinePrice id={p.id} field="inputPriceUsd" value={p.inputPriceUsd} disabled={p.billingType !== "token_io"} fx={fx} />
+      </td>
+      <td>
+        <InlinePrice id={p.id} field="outputPriceUsd" value={p.outputPriceUsd} disabled={p.billingType !== "token_io"} fx={fx} />
+      </td>
+      <td>
+        <InlineStatus id={p.id} status={p.status} />
+      </td>
       <td className="text-xs text-muted">{fmtDate(p.updatedAt)}</td>
       <td><Link href={`/pricing/${p.id}?returnUrl=${encodeURIComponent(returnUrl)}`} className="text-accent text-xs hover:underline">edit</Link></td>
     </tr>
   );
 }
 
-function InlinePrice({ id, field, value, disabled }: { id: string; field: string; value: number | null; disabled?: boolean }) {
+// --- Inline Price with CZK in parentheses ---
+function InlinePrice({ id, field, value, disabled, fx }: { id: string; field: string; value: number | null; disabled?: boolean; fx: number }) {
   const [v, setV] = useState<string>(value != null ? String(value) : "");
   const [isPending, start] = useTransition();
   const [editing, setEditing] = useState(false);
 
   if (disabled) return <span className="text-muted/40">—</span>;
 
+  const czk = value != null ? value * fx : null;
+
   function commit() {
     setEditing(false);
-    const num = v === "" ? null : Number(v);
+    const num = v === "" ? null : Math.round(Number(v) * 100) / 100;
     if (num === value) return;
     start(async () => {
       await inlineUpdatePricing(id, { [field]: num } as any);
@@ -180,7 +199,9 @@ function InlinePrice({ id, field, value, disabled }: { id: string; field: string
         onClick={() => setEditing(true)}
         className={`font-mono text-left hover:bg-panel2 px-1 rounded w-full ${isPending ? "opacity-50" : ""}`}
       >
-        {value != null ? fmtUsd(value) : "—"}
+        {value != null ? (
+          <span>{fmtUsd(value)} <span className="text-muted text-xs">({fmtCzk(czk!)})</span></span>
+        ) : "—"}
       </button>
     );
   }
@@ -189,7 +210,7 @@ function InlinePrice({ id, field, value, disabled }: { id: string; field: string
     <input
       autoFocus
       type="number"
-      step="0.0001"
+      step="0.01"
       value={v}
       onChange={(e) => setV(e.target.value)}
       onBlur={commit}
@@ -197,24 +218,166 @@ function InlinePrice({ id, field, value, disabled }: { id: string; field: string
         if (e.key === "Enter") (e.target as HTMLInputElement).blur();
         if (e.key === "Escape") { setV(value != null ? String(value) : ""); setEditing(false); }
       }}
-      className="input w-24 text-left font-mono"
+      className="input w-24 font-mono"
     />
   );
 }
 
-function StatusToggle({ id, status }: { id: string; status: "active" | "inactive" }) {
+// --- Inline Dropdown for provider / fallback ---
+function InlineDropdown({ id, field, value, options, allowNew, nullable }: {
+  id: string; field: string; value: string; options: string[]; allowNew?: boolean; nullable?: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [v, setV] = useState(value);
+  const [isPending, start] = useTransition();
+  const [addingNew, setAddingNew] = useState(false);
+  const [newVal, setNewVal] = useState("");
+
+  function commit(newValue: string) {
+    setEditing(false);
+    setAddingNew(false);
+    const final = nullable && newValue === "" ? null : newValue;
+    if (final === value || (final === null && value === "")) return;
+    setV(newValue);
+    start(async () => {
+      await inlineUpdatePricing(id, { [field]: final } as any);
+    });
+  }
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        className={`text-left hover:bg-panel2 px-1 rounded w-full text-sm ${isPending ? "opacity-50" : ""} ${!value ? "text-muted" : "text-muted"}`}
+      >
+        {v || "—"}
+      </button>
+    );
+  }
+
+  if (addingNew) {
+    return (
+      <input
+        autoFocus
+        value={newVal}
+        onChange={(e) => setNewVal(e.target.value)}
+        onBlur={() => { if (newVal.trim()) commit(newVal.trim()); else { setAddingNew(false); setEditing(false); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && newVal.trim()) commit(newVal.trim());
+          if (e.key === "Escape") { setAddingNew(false); setEditing(false); }
+        }}
+        placeholder="Nový provider"
+        className="input w-28 text-xs"
+      />
+    );
+  }
+
+  return (
+    <select
+      autoFocus
+      value={v}
+      onChange={(e) => {
+        if (e.target.value === "__new__") { setAddingNew(true); return; }
+        commit(e.target.value);
+      }}
+      onBlur={() => setEditing(false)}
+      className="input text-xs w-28"
+    >
+      {nullable && <option value="">— žádný —</option>}
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      {allowNew && <option value="__new__">+ Nový…</option>}
+    </select>
+  );
+}
+
+// --- Inline Service Dropdown ---
+function InlineServiceDropdown({ id, functionId, functions }: { id: string; functionId: string; functions: FnOption[] }) {
+  const [editing, setEditing] = useState(false);
+  const [fnId, setFnId] = useState(functionId);
+  const [isPending, start] = useTransition();
+
+  const current = functions.find((f) => f.id === fnId);
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        className={`text-left hover:bg-panel2 px-1 rounded w-full ${isPending ? "opacity-50" : ""}`}
+      >
+        <span className="badge" style={{ borderColor: current ? `${getServiceColor(current.serviceCode)}55` : undefined }}>
+          {current?.serviceName ?? "—"}
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <select
+      autoFocus
+      value={fnId}
+      onChange={(e) => {
+        const newFnId = e.target.value;
+        setFnId(newFnId);
+        setEditing(false);
+        start(async () => {
+          await inlineUpdatePricing(id, { functionId: newFnId });
+        });
+      }}
+      onBlur={() => setEditing(false)}
+      className="input text-xs w-32"
+    >
+      {functions.map((f) => <option key={f.id} value={f.id}>{f.serviceName} · {f.name}</option>)}
+    </select>
+  );
+}
+
+// --- Inline Status Dropdown ---
+function InlineStatus({ id, status }: { id: string; status: "active" | "inactive" }) {
+  const [editing, setEditing] = useState(false);
   const [s, setS] = useState(status);
   const [isPending, start] = useTransition();
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        className={`badge ${s === "active" ? "badge-good" : "badge-warn"} ${isPending ? "opacity-50" : ""}`}
+      >
+        {s}
+      </button>
+    );
+  }
+
   return (
-    <button
-      onClick={() => {
-        const next = s === "active" ? "inactive" : "active";
+    <select
+      autoFocus
+      value={s}
+      onChange={(e) => {
+        const next = e.target.value as "active" | "inactive";
         setS(next);
-        start(async () => { await inlineUpdatePricing(id, { status: next }); });
+        setEditing(false);
+        start(async () => {
+          await inlineUpdatePricing(id, { status: next });
+        });
       }}
-      className={`badge ${s === "active" ? "badge-good" : "badge-warn"} ${isPending ? "opacity-50" : ""}`}
+      onBlur={() => setEditing(false)}
+      className="input text-xs"
     >
-      {s}
-    </button>
+      <option value="active">active</option>
+      <option value="inactive">inactive</option>
+    </select>
   );
+}
+
+// Helper - we don't have color in the function data, use a simple lookup
+function getServiceColor(code: string): string {
+  const colors: Record<string, string> = {
+    chat: "#6366f1",
+    video: "#f59e0b",
+    graphics: "#10b981",
+    audio: "#ec4899",
+    deep_research: "#8b5cf6",
+    voice: "#06b6d4",
+  };
+  return colors[code] ?? "#6b7280";
 }
