@@ -41,38 +41,33 @@ export function SimulationClient({
   const [totalTokens, setTotalTokens] = useState(loadedScenario?.totalTokens ?? defaults.totalTokensAssumption);
   const [revenue, setRevenue] = useState(loadedScenario?.revenue ?? defaults.revenueCzkAssumption);
   const [fx, setFx] = useState(loadedScenario?.fx ?? defaults.fx);
+  const [actualShares, setActualShares] = useState<Record<string, number>>(
+    Object.fromEntries(baseline.map((b) => [b.serviceId, b.actualSharePercent])),
+  );
   const [shares, setShares] = useState<Record<string, number>>(
     loadedScenario?.shares ?? Object.fromEntries(baseline.map((b) => [b.serviceId, b.actualSharePercent])),
   );
-  const [manualCpt, setManualCpt] = useState<Record<string, number>>(() => {
-    // Auto-fill CPT for services without data using average from services that have data
-    const withData = baseline.filter((b) => b.hasData && b.costPerUnit > 0);
-    const avgCpt = withData.length > 0 ? withData.reduce((s, b) => s + b.costPerUnit, 0) / withData.length : 0;
-    const initial: Record<string, number> = {};
-    for (const b of baseline) {
-      if (!b.hasData) initial[b.serviceId] = avgCpt;
-    }
-    return initial;
-  });
   const [name, setName] = useState(loadedScenario?.name ?? "");
   const [desc, setDesc] = useState(loadedScenario?.description ?? "");
   const [isPending, start] = useTransition();
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
 
-  const [simulated, setSimulated] = useState(!!loadedScenario);
-
+  const sumActualShare = Object.values(actualShares).reduce((s, v) => s + (Number(v) || 0), 0);
   const sumShare = Object.values(shares).reduce((s, v) => s + (Number(v) || 0), 0);
   const actualTotalCzk = baseline.reduce((s, b) => s + b.actualCostCzk, 0);
 
   const sim = useMemo(() => {
+    const totalUsage = baseline.reduce((s, b) => s + b.actualUsage, 0);
     return baseline.map((b) => {
-      const share = Number(shares[b.serviceId] ?? 0);
-      const simUsage = totalTokens * (share / 100);
-      const cpt = b.hasData ? b.costPerUnit : Number(manualCpt[b.serviceId] ?? 0);
-      const simCost = simUsage * cpt;
-      return { ...b, share, simUsage, simCost, delta: simCost - b.actualCostCzk, cpt };
+      const actualShare = Number(actualShares[b.serviceId] ?? 0);
+      const simShare = Number(shares[b.serviceId] ?? 0);
+      const actualCost = actualTotalCzk * (actualShare / 100);
+      const simCost = actualTotalCzk * (simShare / 100);
+      const actualTokens = totalUsage * (actualShare / 100);
+      const simTokens = totalUsage * (simShare / 100);
+      return { ...b, actualShare, share: simShare, actualCost, simCost, delta: simCost - actualCost, actualTokens, simTokens };
     });
-  }, [baseline, shares, totalTokens, manualCpt]);
+  }, [baseline, shares, actualShares, actualTotalCzk]);
 
   const simTotal = sim.reduce((s, r) => s + r.simCost, 0);
   const actualRatio = revenue > 0 ? actualTotalCzk / revenue : null;
@@ -81,7 +76,7 @@ export function SimulationClient({
 
   const chartData = sim.map((r) => ({
     name: r.serviceName,
-    current: Math.round(r.actualCostCzk),
+    current: Math.round(r.actualCost),
     simulated: Math.round(r.simCost),
   }));
 
@@ -104,6 +99,7 @@ export function SimulationClient({
   }
 
   function reset() {
+    setActualShares(Object.fromEntries(baseline.map((b) => [b.serviceId, b.actualSharePercent])));
     setShares(Object.fromEntries(baseline.map((b) => [b.serviceId, b.actualSharePercent])));
     setTotalTokens(defaults.totalTokensAssumption);
     setRevenue(defaults.revenueCzkAssumption);
@@ -143,16 +139,16 @@ export function SimulationClient({
             <thead>
               <tr>
                 <th title="Interní služba (chat, video, grafika, …)">Služba</th>
-                <th title="Aktuální % podíl na celkových nákladech (z reálných dat za 30 dní)">Aktuální %</th>
+                <th title="Aktuální % podíl na celkových nákladech">Aktuální %</th>
                 <th title="Vaše simulované %. Suma musí být 100.">Simulované %</th>
                 <th title="Rozdíl: simulované − aktuální (v procentních bodech)">Δ pp</th>
-                <th title="Průměrný náklad CZK na 1 token/jednotku. U služeb bez trackingu zadejte ručně.">CZK/jednotka</th>
               </tr>
             </thead>
             <tbody>
               {baseline.map((b) => {
-                const v = Number(shares[b.serviceId] ?? 0);
-                const delta = v - b.actualSharePercent;
+                const actualV = Number(actualShares[b.serviceId] ?? 0);
+                const simV = Number(shares[b.serviceId] ?? 0);
+                const delta = simV - actualV;
                 return (
                   <tr key={b.serviceId}>
                     <td>
@@ -160,12 +156,20 @@ export function SimulationClient({
                         {b.serviceName}
                       </span>
                     </td>
-                    <td className="font-mono">{b.actualSharePercent} %</td>
                     <td>
                       <input
                         type="number"
                         min={0} max={100} step={1}
-                        value={v}
+                        value={actualV}
+                        onChange={(e) => setActualShares({ ...actualShares, [b.serviceId]: Math.round(Number(e.target.value)) })}
+                        className="input w-16 font-mono"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min={0} max={100} step={1}
+                        value={simV}
                         onChange={(e) => setShares({ ...shares, [b.serviceId]: Math.round(Number(e.target.value)) })}
                         className="input w-16 font-mono"
                       />
@@ -173,44 +177,22 @@ export function SimulationClient({
                     <td className={`font-mono ${delta > 0 ? "text-warn" : delta < 0 ? "text-good" : "text-muted"}`}>
                       {delta >= 0 ? "+" : ""}{delta}
                     </td>
-                    <td>
-                      {b.hasData ? (
-                        <span className="font-mono text-muted">{b.costPerUnit.toFixed(6)}</span>
-                      ) : (
-                        <input
-                          type="number" step="0.0001" placeholder="zadejte"
-                          value={manualCpt[b.serviceId] ?? ""}
-                          onChange={(e) => setManualCpt({ ...manualCpt, [b.serviceId]: Number(e.target.value) })}
-                          className="input w-24 font-mono"
-                          title="Služba nemá tracking – zadejte odhad CZK/jednotka"
-                        />
-                      )}
-                    </td>
                   </tr>
                 );
               })}
               <tr className="font-semibold">
                 <td>Suma</td>
-                <td>100 %</td>
+                <td className={`font-mono ${Math.abs(sumActualShare - 100) > 1 ? "text-bad" : "text-good"}`}>
+                  {sumActualShare} %
+                </td>
                 <td className={`font-mono ${Math.abs(sumShare - 100) > 1 ? "text-bad" : "text-good"}`}>
                   {sumShare} %
                 </td>
-                <td colSpan={2}></td>
+                <td></td>
               </tr>
             </tbody>
           </table>
         </Section>
-
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setSimulated(true)}
-            className="btn-primary text-base px-5 py-2"
-            disabled={Math.abs(sumShare - 100) > 1}
-          >
-            Simulovat
-          </button>
-          {Math.abs(sumShare - 100) > 1 && <span className="text-xs text-bad self-center">Suma % musí být 100</span>}
-        </div>
 
         <Section title="Uložit scénář">
           <div className="grid grid-cols-2 gap-3">
@@ -232,7 +214,6 @@ export function SimulationClient({
       </div>
 
       {/* RIGHT: Results */}
-      {simulated && (
       <div>
         <div className="grid grid-cols-2 gap-4 mb-4">
           <Kpi label="Cost ratio – aktuální" value={actualRatio != null ? fmtPct(actualRatio) : "—"} status={ratioStatus(actualRatio)} />
@@ -260,6 +241,8 @@ export function SimulationClient({
             <thead>
               <tr>
                 <th title="Služba">Služba</th>
+                <th title="Aktuální tokeny/jednotky">Akt. tokeny</th>
+                <th title="Simulované tokeny/jednotky">Sim. tokeny</th>
                 <th title="Aktuální náklady za období v CZK">Aktuální CZK</th>
                 <th title="Simulované náklady po změně alokace">Simulované CZK</th>
                 <th title="Absolutní rozdíl v CZK">Δ CZK</th>
@@ -274,13 +257,15 @@ export function SimulationClient({
                       {r.serviceName}
                     </span>
                   </td>
-                  <td className="font-mono">{fmtCzk(r.actualCostCzk)}</td>
+                  <td className="font-mono text-muted">{fmtNumber(r.actualTokens, { compact: true })}</td>
+                  <td className="font-mono">{fmtNumber(r.simTokens, { compact: true })}</td>
+                  <td className="font-mono">{fmtCzk(r.actualCost)}</td>
                   <td className="font-mono">{fmtCzk(r.simCost)}</td>
                   <td className={`font-mono ${r.delta > 0 ? "text-bad" : r.delta < 0 ? "text-good" : "text-muted"}`}>
                     {r.delta >= 0 ? "+" : ""}{fmtCzk(r.delta)}
                   </td>
                   <td className={`font-mono ${r.delta > 0 ? "text-bad" : r.delta < 0 ? "text-good" : "text-muted"}`}>
-                    {r.actualCostCzk > 0 ? fmtPct((r.simCost - r.actualCostCzk) / r.actualCostCzk, 1) : "—"}
+                    {r.actualCost > 0 ? fmtPct((r.simCost - r.actualCost) / r.actualCost, 1) : "—"}
                   </td>
                 </tr>
               ))}
@@ -288,7 +273,6 @@ export function SimulationClient({
           </table>
         </Section>
       </div>
-      )}
     </div>
   );
 }

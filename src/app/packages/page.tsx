@@ -2,8 +2,20 @@ import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/ui";
 import { PackagesTable } from "./PackagesTable";
 import { fmtDate } from "@/lib/format";
+import { UndoButton } from "./UndoButton";
 
 export const dynamic = "force-dynamic";
+
+const fieldLabels: Record<string, string> = {
+  monthlyPriceCzk: "Měsíční cena",
+  yearlyPriceCzk: "Roční cena",
+  monthlyInYearly: "Měsíční v ročním",
+  twoYearPriceCzk: "Cena na 2 roky",
+  threeYearPriceCzk: "Cena na 3 roky",
+  credits: "Počet kreditů",
+  imageLimit: "Limit obrázků",
+  videoLimit: "Limit videí",
+};
 
 export default async function PackagesPage() {
   const [packages, history] = await Promise.all([
@@ -43,6 +55,7 @@ export default async function PackagesPage() {
                 <th>Pole</th>
                 <th>Stará hodnota</th>
                 <th>Nová hodnota</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -50,9 +63,10 @@ export default async function PackagesPage() {
                 <tr key={h.id}>
                   <td className="text-xs text-muted">{fmtDate(h.changedAt.toISOString())}</td>
                   <td className="text-sm">{h.package.name}</td>
-                  <td className="text-xs font-mono">{h.field}</td>
+                  <td className="text-xs">{fieldLabels[h.field] ?? h.field}</td>
                   <td className="text-xs font-mono">{h.oldValue != null ? h.oldValue.toLocaleString("cs-CZ") : "—"}</td>
                   <td className="text-xs font-mono">{h.newValue != null ? h.newValue.toLocaleString("cs-CZ") : "—"}</td>
+                  <td><UndoButton historyId={h.id} /></td>
                 </tr>
               ))}
             </tbody>

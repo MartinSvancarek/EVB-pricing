@@ -45,7 +45,7 @@ Cíl: ověřit before/after dopad na cost ratio.
 ## 5.4 Globální UX pravidla
 
 - **Top bar** vždy zobrazuje: zvolenou periodu, FX kurz, badge `tracking incomplete` (pokud relevantní), avatar uživatele.
-- **Empty states**: pokud chybí data, vždy vysvětlit *proč* a co s tím (např. „Funkce `voice_clone` nemá tracking. Připojte v Settings → Data Sources.“).
+- **Empty states**: pokud chybí data, vždy vysvětlit *proč* a co s tím (např. „Funkce nemá tracking. Připojte v Settings → Data Sources.").
 - **Loading**: skeletony, ne spinnery.
 - **Destruktivní akce** (smazat scénář, archivovat pricing): confirm modal s napsáním názvu entity.
 - **Klávesové zkratky** v Pricing tabulce: `e` = edit aktivního řádku, `n` = nový záznam, `/` = focus filtru.

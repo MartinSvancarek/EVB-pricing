@@ -20,7 +20,7 @@ AuditLog (polymorfní k libovolné entitě)
 | Pole | Typ | Pozn. |
 |---|---|---|
 | id | uuid | PK |
-| code | string | unikátní, např. `chat`, `video`, `graphics`, `audio`, `deep_research`, `voice` |
+| code | string | unikátní, např. `chat`, `video`, `graphics`, `audio`, `deep_research` |
 | name | string | display |
 | color | string | barva pro UI badge |
 | is_active | bool | |

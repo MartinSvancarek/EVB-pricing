@@ -107,7 +107,7 @@ export function PricingTable({ pricings, services, providers, functions, fx, ini
               <th title="Název AI modelu">Model</th>
               <th title="Primární provider / dodavatel">Provider</th>
               <th title="Záložní provider pokud primární selže">Fallback</th>
-              <th title="Služba (chat / video / grafika / audio / deep research / voice)">Služba</th>
+              <th title="Služba (chat / video / grafika / audio / deep research)">Služba</th>
               <th title="Hlavní cena v USD + CZK (per image, per second, per minute, per request)">Cena USD</th>
               <th title="Vstupní cena za 1M tokenů + CZK (jen chat / research modely)">Vstup USD</th>
               <th title="Výstupní cena za 1M tokenů + CZK (jen chat / research modely)">Výstup USD</th>
@@ -386,7 +386,6 @@ function getServiceColor(code: string): string {
     graphics: "#10b981",
     audio: "#ec4899",
     deep_research: "#8b5cf6",
-    voice: "#06b6d4",
   };
   return colors[code] ?? "#6b7280";
 }

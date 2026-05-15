@@ -70,7 +70,6 @@ async function main() {
     { code: "graphics", name: "Grafika", color: "#3fb27f" },
     { code: "audio", name: "Audio", color: "#e0a23a" },
     { code: "deep_research", name: "Deep research", color: "#a26bff" },
-    { code: "voice", name: "Voice", color: "#26b3c4" },
   ];
   const svcMap: Record<string, string> = {};
   for (const s of services) {
@@ -246,7 +245,7 @@ async function main() {
 
   // Create Functions + Pricings for DEEP RESEARCH
   const drFn = await prisma.function.create({
-    data: { serviceId: svcMap.deep_research, code: "research_run", name: "Deep research run", dataSource: "missing" },
+    data: { serviceId: svcMap.deep_research, code: "research_run", name: "Deep research run", dataSource: "manual" },
   });
   for (const m of deepResearchModels) {
     await prisma.modelPricing.create({
@@ -272,24 +271,16 @@ async function main() {
     },
   });
 
-  // VOICE function
-  const voiceFn = await prisma.function.create({
-    data: { serviceId: svcMap.voice, code: "voice_clone", name: "Voice clone TTS", dataSource: "missing" },
-  });
-  await prisma.modelPricing.create({
-    data: {
-      functionId: voiceFn.id, provider: "ElevenLabs", model: "Eleven V3",
-      billingType: "minute", priceUsd: 0.18, unitLabel: "1 minute",
-      status: "active", updatedBy: "martin@everbot.cz",
-    },
-  });
 
   // ─── Usage data (60 days) for tracked functions ───
+  // Target shares: Grafika 40%, Video 30%, Chat 23%, Deep research 5%, Audio 2%
+  // Target cost ratio: ~26% (monthly costs / revenue)
   const trackedFns: Array<{ fn: any; dailyUnits?: number; dailyInput?: number; dailyOutput?: number; tokenBased: boolean }> = [
-    { fn: gfxFn, dailyUnits: 4500, tokenBased: false },
-    { fn: videoFn, dailyUnits: 1200, tokenBased: false },
-    { fn: chatFn, dailyInput: 5_000_000, dailyOutput: 1_500_000, tokenBased: true },
-    { fn: audioFn, dailyUnits: 180_000, tokenBased: false },
+    { fn: gfxFn, dailyUnits: 9_900, tokenBased: false },
+    { fn: videoFn, dailyUnits: 940, tokenBased: false },
+    { fn: chatFn, dailyInput: 22_500_000, dailyOutput: 6_600_000, tokenBased: true },
+    { fn: drFn, dailyInput: 2_750_000, dailyOutput: 820_000, tokenBased: true },
+    { fn: audioFn, dailyUnits: 345_000, tokenBased: false },
   ];
 
   for (const spec of trackedFns) {
@@ -322,7 +313,7 @@ async function main() {
       createdBy: "martin@everbot.cz",
     },
   });
-  const scenarioShares: Record<string, number> = { chat: 30, video: 35, graphics: 18, audio: 7, deep_research: 5, voice: 5 };
+  const scenarioShares: Record<string, number> = { chat: 30, video: 35, graphics: 20, audio: 8, deep_research: 7 };
   for (const [code, pct] of Object.entries(scenarioShares)) {
     await prisma.scenarioAllocation.create({
       data: { scenarioId: scenario.id, serviceId: svcMap[code], sharePercent: pct },

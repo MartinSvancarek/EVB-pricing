@@ -16,7 +16,7 @@ Pro každé view: **účel · KPI · filtry · grafy · tabulky · CTA**.
 
 **Grafy:**
 - Trend cost ratio za posledních 30 dnů (line chart, čárkovaná linka cíle 20 %).
-- Stacked bar: denní náklady CZK rozpadlé po službách (chat / video / grafika / audio / deep research / voice).
+- Stacked bar: denní náklady CZK rozpadlé po službách (chat / video / grafika / audio / deep research).
 
 **Tabulka:**
 - Top 10 funkcí podle nákladů za zvolené období (sloupce: služba, funkce, model, náklady CZK, % z celku, trend ↑↓).
@@ -38,7 +38,7 @@ Pro každé view: **účel · KPI · filtry · grafy · tabulky · CTA**.
 - Aktuální FX kurz CZK/USD (klikací → Settings)
 
 **Filtry (horní řádek):**
-- Služba (chat / video / grafika / audio / deep research / voice / …)
+- Služba (chat / video / grafika / audio / deep research / …)
 - Provider (OpenAI / Anthropic / Google / ElevenLabs / Stability / vlastní / …)
 - Model (závislé na provideru)
 - Typ účtování (per token input/output / per image / per second / per request / per minute)
