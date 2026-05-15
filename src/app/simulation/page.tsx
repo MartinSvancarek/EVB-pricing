@@ -35,6 +35,7 @@ export default async function SimulationPage({
   const hasMultipleServices = servicesWithCost.length > 1;
 
   const defaultShares: Record<string, number> = { chat: 23, graphics: 40, video: 30, audio: 2, deep_research: 5 };
+  const costWeights: Record<string, number> = { chat: 1, deep_research: 1.5, graphics: 8, audio: 10, video: 15 };
 
   const baseline = services.map((svc) => {
     const b = buckets.find((x) => x.serviceId === svc.id);
@@ -90,9 +91,10 @@ export default async function SimulationPage({
         baseline={baseline}
         defaults={{
           totalTokensAssumption: Math.round(totalTokens),
-          revenueCzkAssumption: Math.round(revenue || 4_500_000),
-          fx: fx ?? 23,
+          revenueCzkAssumption: 5_638_684,
+          fx: fx ?? 22.8,
         }}
+        costWeights={costWeights}
         loadedScenario={loadedScenario}
       />
     </>

@@ -12,12 +12,12 @@ import {
 import clsx from "clsx";
 
 const items = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Přehled", icon: LayoutDashboard },
   { href: "/packages", label: "Balíčky", icon: Package },
-  { href: "/pricing", label: "Pricing", icon: Tags },
-  { href: "/cost-analytics/cost", label: "Cost analytics", icon: BarChart3 },
-  { href: "/simulation", label: "Simulation", icon: FlaskConical },
-  { href: "/settings/fx", label: "Settings", icon: Settings },
+  { href: "/pricing", label: "Ceník", icon: Tags },
+  { href: "/simulation", label: "Simulace", icon: FlaskConical },
+  { href: "/cost-analytics/cost", label: "Analýza nákladů", icon: BarChart3 },
+  { href: "/settings/fx", label: "Nastavení", icon: Settings },
 ];
 
 export function Sidebar() {

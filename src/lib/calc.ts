@@ -3,7 +3,7 @@ import type { ModelPricing, UsageRecord, FxRate, Revenue } from "@prisma/client"
 
 export function costUsdForUsage(
   usage: Pick<UsageRecord, "inputTokens" | "outputTokens" | "units">,
-  pricing: Pick<ModelPricing, "billingType" | "inputPriceUsd" | "outputPriceUsd" | "unitPriceUsd">,
+  pricing: Pick<ModelPricing, "billingType" | "priceUsd" | "inputPriceUsd" | "outputPriceUsd" | "unitPriceUsd">,
 ): number | null {
   if (!pricing) return null;
   const input = usage.inputTokens != null ? Number(usage.inputTokens) : 0;
@@ -20,9 +20,11 @@ export function costUsdForUsage(
     case "token_unit":
       if (pricing.unitPriceUsd == null) return null;
       return ((input + output) / 1_000_000) * pricing.unitPriceUsd;
-    default:
-      if (pricing.unitPriceUsd == null) return null;
-      return units * pricing.unitPriceUsd;
+    default: {
+      const unitPrice = pricing.unitPriceUsd ?? pricing.priceUsd;
+      if (unitPrice == null) return null;
+      return units * unitPrice;
+    }
   }
 }
 

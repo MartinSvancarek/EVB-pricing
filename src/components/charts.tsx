@@ -21,7 +21,7 @@ import {
 
 const axisStyle = { fontSize: 11, fill: "#8a93a6" };
 const grid = "#222735";
-const tooltipStyle = { background: "#11141b", border: "1px solid #222735", padding: "6px 10px", fontSize: 12, lineHeight: "1.4" };
+const tooltipStyle = { background: "#11141b", border: "1px solid #222735", padding: "6px 10px", fontSize: 12, lineHeight: "1.4", color: "#e0e4ec" };
 
 export function CostTrendChart({
   data,
@@ -38,7 +38,10 @@ export function CostTrendChart({
           <XAxis dataKey="date" tick={axisStyle} stroke={grid} />
           <YAxis yAxisId="l" tick={axisStyle} stroke={grid} />
           <YAxis yAxisId="r" orientation="right" tick={axisStyle} stroke={grid} domain={[0, 0.4]} tickFormatter={(v) => `${(v * 100).toFixed(0)}%`} />
-          <Tooltip contentStyle={tooltipStyle} wrapperStyle={{ fontSize: 12 }} />
+          <Tooltip contentStyle={tooltipStyle} wrapperStyle={{ fontSize: 12 }} formatter={(value: any, name: string) => {
+            if (name === "Cost ratio") return [`${(Number(value) * 100).toFixed(1)} %`, name];
+            return [Number(value).toLocaleString("cs-CZ") + " Kč", name];
+          }} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Bar yAxisId="l" dataKey="cost" name="Náklady CZK" fill="#5b8cff" />
           <Line yAxisId="r" dataKey="ratio" name="Cost ratio" stroke="#e0a23a" strokeWidth={2} dot={false} />
@@ -111,10 +114,25 @@ export function StackedBarByService({
   );
 }
 
+function DonutTooltip({ active, payload }: any) {
+  if (!active || !payload?.[0]) return null;
+  const d = payload[0].payload;
+  const total = d.total || 1;
+  const pct = ((d.value / total) * 100).toFixed(1);
+  return (
+    <div style={tooltipStyle}>
+      <div style={{ fontWeight: 600, marginBottom: 4, color: d.color }}>{d.name}</div>
+      <div>{pct} % nákladů</div>
+      <div>Tokeny/jednotky: {(d.tokens ?? 0).toLocaleString("cs-CZ")}</div>
+      <div>${(d.costUsd ?? 0).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ({(d.value ?? 0).toLocaleString("cs-CZ")} Kč)</div>
+    </div>
+  );
+}
+
 export function ServiceDonut({
   data,
 }: {
-  data: Array<{ name: string; value: number; color: string }>;
+  data: Array<{ name: string; value: number; color: string; costUsd?: number; tokens?: number; total?: number }>;
 }) {
   return (
     <div className="h-72">
@@ -125,7 +143,7 @@ export function ServiceDonut({
               <Cell key={i} fill={d.color} />
             ))}
           </Pie>
-          <Tooltip contentStyle={tooltipStyle} wrapperStyle={{ fontSize: 12 }} />
+          <Tooltip content={<DonutTooltip />} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
         </PieChart>
       </ResponsiveContainer>

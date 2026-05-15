@@ -125,7 +125,7 @@ export default async function DashboardPage() {
               <th>Náklady USD</th>
               <th>Náklady CZK</th>
               <th>% z celku</th>
-              <th>Tokeny</th>
+              <th>Tokeny / jednotky</th>
             </tr>
           </thead>
           <tbody>
@@ -139,7 +139,7 @@ export default async function DashboardPage() {
                 <td className="font-mono">{fmtUsd(b.costUsd, { compact: true })}</td>
                 <td className="font-mono">{fmtCzk(b.costCzk)}</td>
                 <td className="text-muted">{fmtPct(b.costCzk / Math.max(mtdCosts.czk, 1), 1)}</td>
-                <td className="text-muted">{fmtNumber(b.inputTokens + b.outputTokens, { compact: true })}</td>
+                <td className="text-muted">{fmtNumber(b.inputTokens + b.outputTokens + b.units, { compact: true })}</td>
               </tr>
             ))}
             {buckets.length === 0 && (

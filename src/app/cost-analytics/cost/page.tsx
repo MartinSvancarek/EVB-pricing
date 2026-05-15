@@ -51,7 +51,7 @@ export default async function CostView({
   }));
 
   const buckets = bucketBy(data.enriched, "service");
-  const donutData = buckets.map((b) => ({ name: b.serviceName, value: Math.round(b.costCzk), color: b.serviceColor }));
+  const donutData = buckets.map((b) => ({ name: b.serviceName, value: Math.round(b.costCzk), color: b.serviceColor, costUsd: b.costUsd, tokens: b.inputTokens + b.outputTokens + b.units, total: Math.round(totalCzk) }));
   const rawSvcBuckets = bucketBy(data.enriched, "service");
   const svcBuckets = services.map((svc) => {
     const existing = rawSvcBuckets.find((b) => b.serviceId === svc.id);

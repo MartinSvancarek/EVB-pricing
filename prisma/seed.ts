@@ -31,10 +31,10 @@ async function main() {
     ],
   });
 
-  // FX rates – last 3 days
-  for (let i = 0; i < 3; i++) {
+  // FX rates – last 60 days (consistent 22.8)
+  for (let i = 0; i < 60; i++) {
     await prisma.fxRate.create({
-      data: { date: daysAgo(i), czkPerUsd: 22.8 + Math.sin(i / 7) * 0.4, source: "manual" },
+      data: { date: daysAgo(i), czkPerUsd: 22.8, source: "manual" },
     });
   }
 
@@ -44,7 +44,7 @@ async function main() {
     const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - m, 1));
     const end = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - m + 1, 0));
     await prisma.revenue.create({
-      data: { periodStart: start, periodEnd: end, amountCzk: 4_500_000 + m * 200_000 },
+      data: { periodStart: start, periodEnd: end, amountCzk: 5_638_684 },
     });
   }
 
@@ -170,11 +170,12 @@ async function main() {
   const gfxFn = await prisma.function.create({
     data: { serviceId: svcMap.graphics, code: "image_generation", name: "Generování obrázku", dataSource: "grafana" },
   });
-  for (const m of graphicsModels) {
+  for (let idx = 0; idx < graphicsModels.length; idx++) {
+    const m = graphicsModels[idx];
     await prisma.modelPricing.create({
       data: {
         functionId: gfxFn.id, provider: providerFor(m), model: m,
-        billingType: "image", priceUsd: +(0.04 + Math.random() * 0.06).toFixed(4),
+        billingType: "image", priceUsd: idx === 0 ? 0.08 : +(0.04 + Math.random() * 0.08).toFixed(4),
         unitLabel: "1 image", status: "active", updatedBy: "martin@everbot.cz",
       },
     });
@@ -213,12 +214,13 @@ async function main() {
     "Sora 2 Pro": { resolution: "4K", credits: 100, durationSec: 20 },
     "Sora 2 Storyboard": { resolution: "1080p", credits: 60, durationSec: 15 },
   };
-  for (const m of videoModels) {
+  for (let idx = 0; idx < videoModels.length; idx++) {
+    const m = videoModels[idx];
     const meta = videoMeta[m] ?? {};
     await prisma.modelPricing.create({
       data: {
         functionId: videoFn.id, provider: providerFor(m), model: m,
-        billingType: "video_second", priceUsd: +(0.3 + Math.random() * 0.5).toFixed(4),
+        billingType: "video_second", priceUsd: idx === 0 ? 0.50 : +(0.25 + Math.random() * 0.5).toFixed(4),
         unitLabel: "1 second", status: "active", updatedBy: "martin@everbot.cz",
         resolution: meta.resolution ?? null,
         credits: meta.credits ?? null,
@@ -231,13 +233,14 @@ async function main() {
   const chatFn = await prisma.function.create({
     data: { serviceId: svcMap.chat, code: "assistant_reply", name: "Chat – odpověď", dataSource: "grafana" },
   });
-  for (const m of chatModels) {
+  for (let idx = 0; idx < chatModels.length; idx++) {
+    const m = chatModels[idx];
     await prisma.modelPricing.create({
       data: {
         functionId: chatFn.id, provider: providerFor(m), model: m,
         billingType: "token_io", priceUsd: null,
-        inputPriceUsd: +(1 + Math.random() * 14).toFixed(4),
-        outputPriceUsd: +(4 + Math.random() * 56).toFixed(4),
+        inputPriceUsd: idx === 0 ? 5.5 : +(1 + Math.random() * 10).toFixed(4),
+        outputPriceUsd: idx === 0 ? 22 : +(4 + Math.random() * 40).toFixed(4),
         unitLabel: "1M tokens", status: "active", updatedBy: "martin@everbot.cz",
       },
     });
@@ -247,13 +250,14 @@ async function main() {
   const drFn = await prisma.function.create({
     data: { serviceId: svcMap.deep_research, code: "research_run", name: "Deep research run", dataSource: "manual" },
   });
-  for (const m of deepResearchModels) {
+  for (let idx = 0; idx < deepResearchModels.length; idx++) {
+    const m = deepResearchModels[idx];
     await prisma.modelPricing.create({
       data: {
         functionId: drFn.id, provider: providerFor(m), model: m,
         billingType: "token_io", priceUsd: null,
-        inputPriceUsd: +(10 + Math.random() * 10).toFixed(4),
-        outputPriceUsd: +(40 + Math.random() * 30).toFixed(4),
+        inputPriceUsd: idx === 0 ? 9 : +(6 + Math.random() * 8).toFixed(4),
+        outputPriceUsd: idx === 0 ? 36 : +(25 + Math.random() * 20).toFixed(4),
         unitLabel: "1M tokens", status: "active", updatedBy: "martin@everbot.cz",
       },
     });
@@ -266,21 +270,24 @@ async function main() {
   await prisma.modelPricing.create({
     data: {
       functionId: audioFn.id, provider: "OpenAI", model: "Whisper-1",
-      billingType: "audio_second", priceUsd: 0.0001, unitLabel: "1 second",
+      billingType: "audio_second", priceUsd: 0.02, unitLabel: "1 second",
       status: "active", updatedBy: "martin@everbot.cz",
     },
   });
 
 
   // ─── Usage data (60 days) for tracked functions ───
-  // Target shares: Grafika 40%, Video 30%, Chat 23%, Deep research 5%, Audio 2%
-  // Target cost ratio: ~26% (monthly costs / revenue)
+  // Prices: Grafika $0.08/img, Video $0.50/s, Chat $5.5/$22 per 1M, DR $9/$36 per 1M, Audio $0.02/s
+  // Target: 26% cost ratio with revenue 5,638,684 CZK, FX 22.8
+  // Total daily cost USD ≈ $2,143
+  // Cost weights: Chat 1x, DR 1.5x, Grafika 8x, Audio 10x, Video 15x
+  // Daily costs: Chat $60, DR $20, Audio $52, Grafika $836, Video $1,175
   const trackedFns: Array<{ fn: any; dailyUnits?: number; dailyInput?: number; dailyOutput?: number; tokenBased: boolean }> = [
-    { fn: gfxFn, dailyUnits: 9_900, tokenBased: false },
-    { fn: videoFn, dailyUnits: 940, tokenBased: false },
-    { fn: chatFn, dailyInput: 22_500_000, dailyOutput: 6_600_000, tokenBased: true },
-    { fn: drFn, dailyInput: 2_750_000, dailyOutput: 820_000, tokenBased: true },
-    { fn: audioFn, dailyUnits: 345_000, tokenBased: false },
+    { fn: gfxFn, dailyUnits: 10_450, tokenBased: false },
+    { fn: videoFn, dailyUnits: 2_350, tokenBased: false },
+    { fn: chatFn, dailyInput: 5_000_000, dailyOutput: 1_500_000, tokenBased: true },
+    { fn: drFn, dailyInput: 1_000_000, dailyOutput: 300_000, tokenBased: true },
+    { fn: audioFn, dailyUnits: 2_600, tokenBased: false },
   ];
 
   for (const spec of trackedFns) {

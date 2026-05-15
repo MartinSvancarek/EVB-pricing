@@ -31,10 +31,12 @@ type LoadedScenario = {
 export function SimulationClient({
   baseline,
   defaults,
+  costWeights,
   loadedScenario,
 }: {
   baseline: BaselineRow[];
   defaults: { totalTokensAssumption: number; revenueCzkAssumption: number; fx: number };
+  costWeights: Record<string, number>;
   loadedScenario: LoadedScenario;
 }) {
   const router = useRouter();
@@ -58,16 +60,30 @@ export function SimulationClient({
 
   const sim = useMemo(() => {
     const totalUsage = baseline.reduce((s, b) => s + b.actualUsage, 0);
+    // Weighted cost model: each service has a different cost per share point
+    const actualWeightedSum = baseline.reduce((s, b) => {
+      const w = costWeights[b.serviceCode] ?? 1;
+      const share = Number(actualShares[b.serviceId] ?? 0);
+      return s + share * w;
+    }, 0);
+    const simWeightedSum = baseline.reduce((s, b) => {
+      const w = costWeights[b.serviceCode] ?? 1;
+      const share = Number(shares[b.serviceId] ?? 0);
+      return s + share * w;
+    }, 0);
+    const costPerWeightedUnit = actualWeightedSum > 0 ? actualTotalCzk / actualWeightedSum : 0;
+
     return baseline.map((b) => {
+      const w = costWeights[b.serviceCode] ?? 1;
       const actualShare = Number(actualShares[b.serviceId] ?? 0);
       const simShare = Number(shares[b.serviceId] ?? 0);
-      const actualCost = actualTotalCzk * (actualShare / 100);
-      const simCost = actualTotalCzk * (simShare / 100);
+      const actualCost = costPerWeightedUnit * actualShare * w;
+      const simCost = costPerWeightedUnit * simShare * w;
       const actualTokens = totalUsage * (actualShare / 100);
       const simTokens = totalUsage * (simShare / 100);
       return { ...b, actualShare, share: simShare, actualCost, simCost, delta: simCost - actualCost, actualTokens, simTokens };
     });
-  }, [baseline, shares, actualShares, actualTotalCzk]);
+  }, [baseline, shares, actualShares, actualTotalCzk, costWeights]);
 
   const simTotal = sim.reduce((s, r) => s + r.simCost, 0);
   const actualRatio = revenue > 0 ? actualTotalCzk / revenue : null;
