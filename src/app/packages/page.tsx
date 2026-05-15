@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/ui";
 import { PackagesTable } from "./PackagesTable";
+import { PackageVersions } from "./PackageVersions";
 import { fmtDate } from "@/lib/format";
 import { UndoButton } from "./UndoButton";
 
@@ -18,14 +19,20 @@ const fieldLabels: Record<string, string> = {
 };
 
 export default async function PackagesPage() {
-  const [packages, history] = await Promise.all([
+  const [packages, versions] = await Promise.all([
     prisma.package.findMany({ orderBy: { sortOrder: "asc" } }),
-    prisma.packageHistory.findMany({
-      include: { package: { select: { name: true } } },
-      orderBy: { changedAt: "desc" },
-      take: 50,
-    }),
+    prisma.packageVersion.findMany({ orderBy: { createdAt: "desc" } }),
   ]);
+
+  const activeVersion = versions.find((v) => v.isActive);
+
+  // History scoped to the active version
+  const history = await prisma.packageHistory.findMany({
+    where: { versionId: activeVersion?.id ?? undefined },
+    include: { package: { select: { name: true } } },
+    orderBy: { changedAt: "desc" },
+    take: 50,
+  });
 
   // Separate enterprise (custom) from regular
   const enterpriseMin = packages.find((p) => p.code === "enterprise_min");
@@ -44,9 +51,16 @@ export default async function PackagesPage() {
         enterpriseMax={enterpriseMax ? { ...enterpriseMax, credits: Number(enterpriseMax.credits), imageLimit: enterpriseMax.imageLimit != null ? Number(enterpriseMax.imageLimit) : null, videoLimit: enterpriseMax.videoLimit != null ? Number(enterpriseMax.videoLimit) : null } : null}
       />
 
+      <PackageVersions
+        versions={versions.map((v) => ({ ...v, createdAt: v.createdAt.toISOString() }))}
+        activeVersionId={activeVersion?.id ?? null}
+      />
+
       {history.length > 0 && (
         <div className="card mt-4">
-          <h3 className="text-sm font-semibold mb-3">Historie změn</h3>
+          <h3 className="text-sm font-semibold mb-3">
+            Historie změn{activeVersion ? ` – ${activeVersion.name}` : ""}
+          </h3>
           <table className="table">
             <thead>
               <tr>

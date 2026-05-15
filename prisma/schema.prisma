@@ -177,6 +177,7 @@ model PackageHistory {
   id                String   @id @default(cuid())
   packageId         String
   package           Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  versionId         String?
   field             String   // which field changed
   oldValue          Float?
   newValue          Float?
@@ -184,4 +185,15 @@ model PackageHistory {
   changedAt         DateTime @default(now())
 
   @@index([packageId, changedAt])
+  @@index([versionId])
+}
+
+model PackageVersion {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  snapshot    String   // JSON array of all packages at time of save
+  isActive    Boolean  @default(false)
+  createdBy   String?
+  createdAt   DateTime @default(now())
 }

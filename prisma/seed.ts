@@ -21,6 +21,8 @@ async function main() {
   await prisma.revenue.deleteMany();
   await prisma.user.deleteMany();
   await prisma.auditLog.deleteMany();
+  await prisma.packageHistory.deleteMany();
+  await prisma.packageVersion.deleteMany();
   await prisma.package.deleteMany();
 
   // Users
@@ -62,6 +64,19 @@ async function main() {
   for (const p of packages) {
     await prisma.package.create({ data: p as any });
   }
+
+  // Create initial PackageVersion "Verze 1"
+  const allPkgs = await prisma.package.findMany({ orderBy: { sortOrder: "asc" } });
+  const snapshot = JSON.stringify(allPkgs.map((p) => ({
+    code: p.code, name: p.name, monthlyPriceCzk: p.monthlyPriceCzk,
+    yearlyPriceCzk: p.yearlyPriceCzk, monthlyInYearly: p.monthlyInYearly,
+    twoYearPriceCzk: p.twoYearPriceCzk, threeYearPriceCzk: p.threeYearPriceCzk,
+    credits: p.credits, imageLimit: p.imageLimit, videoLimit: p.videoLimit,
+    isCustom: p.isCustom, creditsNote: p.creditsNote, sortOrder: p.sortOrder,
+  })));
+  await prisma.packageVersion.create({
+    data: { name: "Verze 1", description: "Výchozí nastavení balíčků", snapshot, isActive: true, createdBy: "seed" },
+  });
 
   // Services
   const services = [

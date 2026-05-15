@@ -1,11 +1,11 @@
 "use client";
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Section, Kpi } from "@/components/ui";
 import { fmtCzk, fmtNumber, fmtPct } from "@/lib/format";
 import { CompareBarChart } from "@/components/charts";
 import { ratioStatus } from "@/lib/calc";
 import { saveScenario } from "./actions";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export type BaselineRow = {
   serviceId: string;
@@ -53,6 +53,85 @@ export function SimulationClient({
   const [desc, setDesc] = useState(loadedScenario?.description ?? "");
   const [isPending, start] = useTransition();
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const pendingHref = useRef<string | null>(null);
+  const justSaved = useRef(false);
+
+  const STORAGE_KEY = "evb_simulation_draft";
+
+  // Restore from localStorage on mount (only if no loaded scenario)
+  useEffect(() => {
+    if (loadedScenario) return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (draft.totalTokens) setTotalTokens(draft.totalTokens);
+      if (draft.revenue) setRevenue(draft.revenue);
+      if (draft.fx) setFx(draft.fx);
+      if (draft.actualShares) setActualShares(draft.actualShares);
+      if (draft.shares) setShares(draft.shares);
+      if (draft.name) setName(draft.name);
+      if (draft.desc) setDesc(draft.desc);
+    } catch {}
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist to localStorage on every change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ totalTokens, revenue, fx, actualShares, shares, name, desc }));
+    } catch {}
+  }, [totalTokens, revenue, fx, actualShares, shares, name, desc]);
+
+  // Determine if state is "dirty" (differs from defaults)
+  const isDirty = useMemo(() => {
+    const defaultSharesObj = Object.fromEntries(baseline.map((b) => [b.serviceId, b.actualSharePercent]));
+    const sharesChanged = Object.keys(shares).some((k) => shares[k] !== defaultSharesObj[k]);
+    const actualChanged = Object.keys(actualShares).some((k) => actualShares[k] !== defaultSharesObj[k]);
+    return sharesChanged || actualChanged || name.trim() !== "" || desc.trim() !== "";
+  }, [shares, actualShares, baseline, name, desc]);
+
+  // Warn on browser close / refresh
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty && !justSaved.current) { e.preventDefault(); }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // Intercept Next.js client-side navigation
+  const pathname = usePathname();
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (justSaved.current || !isDirty) return;
+      const link = (e.target as HTMLElement).closest("a");
+      if (!link) return;
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("http") || href === pathname) return;
+      // Internal navigation with unsaved changes
+      e.preventDefault();
+      e.stopPropagation();
+      pendingHref.current = href;
+      setShowLeaveDialog(true);
+    };
+    document.addEventListener("click", handleClick, true);
+    return () => document.removeEventListener("click", handleClick, true);
+  }, [isDirty, pathname]);
+
+  const confirmLeave = useCallback(() => {
+    setShowLeaveDialog(false);
+    localStorage.removeItem(STORAGE_KEY);
+    if (pendingHref.current) {
+      router.push(pendingHref.current);
+      pendingHref.current = null;
+    }
+  }, [router]);
+
+  const cancelLeave = useCallback(() => {
+    setShowLeaveDialog(false);
+    pendingHref.current = null;
+  }, []);
 
   const sumActualShare = Object.values(actualShares).reduce((s, v) => s + (Number(v) || 0), 0);
   const sumShare = Object.values(shares).reduce((s, v) => s + (Number(v) || 0), 0);
@@ -108,6 +187,8 @@ export function SimulationClient({
           fxRate: fx,
           shares: baseline.map((b) => ({ serviceId: b.serviceId, sharePercent: Number(shares[b.serviceId] ?? 0) })),
         });
+        justSaved.current = true;
+        localStorage.removeItem(STORAGE_KEY);
         setSavedMsg("Scénář uložen.");
         setTimeout(() => router.push("/simulation/scenarios"), 600);
       } catch (e: any) { setSavedMsg(e.message ?? "Chyba."); }
@@ -122,9 +203,11 @@ export function SimulationClient({
     setFx(defaults.fx);
     setName("");
     setDesc("");
+    localStorage.removeItem(STORAGE_KEY);
   }
 
   return (
+    <>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* LEFT: Inputs */}
       <div>
@@ -290,5 +373,20 @@ export function SimulationClient({
         </Section>
       </div>
     </div>
+
+    {/* Unsaved changes dialog */}
+    {showLeaveDialog && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+        <div className="bg-panel border border-border rounded-lg p-6 max-w-sm w-full shadow-xl">
+          <h3 className="text-lg font-semibold mb-2">Neuložená simulace</h3>
+          <p className="text-sm text-muted mb-4">Máte neuložené změny v simulaci. Chcete odejít bez uložení?</p>
+          <div className="flex gap-2 justify-end">
+            <button onClick={cancelLeave} className="btn">Zůstat</button>
+            <button onClick={confirmLeave} className="btn text-bad border-bad/30 hover:bg-bad/10">Odejít</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
